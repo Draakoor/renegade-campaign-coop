@@ -17,8 +17,10 @@
 #include "mission_coop.h"
 #include "coop_services.h"
 #include "campaign_admin.h"
+#include "coop_features.h"
 static CoopServices::Events* coopServices = nullptr;
 static NovaraAdmin* campaignAdmin = nullptr;
+static CoopFeatures::Events* coopFeatures = nullptr;
 
 static void DumpMissionObjects() {
     FILE* out = fopen("mission-objects.tsv", "wb");
@@ -89,7 +91,7 @@ public:
     }
 
     void Player_Loaded_Event(cPlayer* player) override {
-        DA::Private_Host_Message(player, "Novara campaign coop. Public test; mission validation is pending. Supply terminals: !buy.");
+        DA::Private_Host_Message(player, "Novara campaign coop. Public test; mission validation is pending. Commands: !help. Supply terminals: !buy.");
     }
 };
 Register_Game_Mode(NovaraCampaign, "Campaign", "Renegade Campaign Coop", 0);
@@ -98,10 +100,11 @@ class MPF_Player : public ScriptImpClass {
     void Created(GameObject* obj) override {
         const int team = DASettingsManager::Get_Int("ForceTeam", 1);
         if (Get_Object_Type(obj) != team) { Change_Team(obj, team); return; }
-        if (Campaign::state.active()) Commands->Start_Timer(obj,this,.25f,1);
+        Commands->Start_Timer(obj,this,.25f,1);
     }
     void Timer_Expired(GameObject* obj,int) override {
         if (!Campaign::PlacePlayer(obj)) Commands->Start_Timer(obj,this,1.0f,1);
+        else CoopFeatures::PlaceLegacyRespawn(obj);
     }
 };
 ScriptRegistrant<MPF_Player> playerRegistrant("MPF_Player", "");
@@ -158,6 +161,7 @@ public:
     void Level_Loaded_Event() override {
         Campaign::Loaded();
         CoopServices::Loaded();
+        CoopFeatures::Loaded();
         const char* map = The_Game()->Get_Map_Name();
         FILE* state = fopen("active-map.tmp", "wb");
         if (state) { fputs(map, state); fclose(state);
@@ -171,6 +175,7 @@ public:
         lastPoll = now;
         Campaign::Tick((std::min)(elapsed,1.0f));
         CoopServices::Tick();
+        CoopFeatures::Tick();
         FILE* in = fopen("console.in", "rb");
         if (!in) return;
         fseek(in, inputOffset, SEEK_SET);
@@ -184,6 +189,8 @@ public:
             if (end > line && end[-1] == '\r') end[-1] = '\0';
             if (!_stricmp(line, "campaign_dump")) DumpMissionObjects();
             else if (!_stricmp(line,"campaign_supplies")) CoopServices::Dump();
+            else if (!_stricmp(line,"campaign_features")) CoopFeatures::Dump();
+            else if (!_stricmp(line,"campaign_test_features")) CoopFeatures::Probe();
             else if (!_stricmp(line,"campaign_test_supplies")) CoopServices::Probe();
             else if (!_strnicmp(line,"campaign_admin ",15)) {
                 if (!campaignAdmin->Approve(line+15)) Console_Output("[Novara] Admin request not found or expired. Use !admin in-game first.\n");
@@ -212,11 +219,13 @@ extern "C" __declspec(dllexport) void Plugin_Init() {
     Campaign::Install();
     coopServices = new CoopServices::Events;
     campaignAdmin = new NovaraAdmin;
+    coopFeatures = new CoopFeatures::Events;
     panelConsole = new PanelConsole;
     Console_Output("[Novara] da_campaign loaded (TT 4.8.4 / DA 1.11.1).\n");
 }
 extern "C" __declspec(dllexport) void Plugin_Shutdown() {
     Campaign::Uninstall();
+    delete coopFeatures; coopFeatures = nullptr;
     delete campaignAdmin; campaignAdmin = nullptr;
     delete coopServices; coopServices = nullptr;
     delete panelConsole;

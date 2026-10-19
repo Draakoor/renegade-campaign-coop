@@ -4,7 +4,7 @@
 
 A Pterodactyl/Docker development environment for C&C Renegade: **TT 4.8.4, Dragonade 1.11.1, Wine, 8 players**.
 
-**M06, M07 and M09 now include custom coop adaptations; complete playtesting is still pending.** Newly created volumes include the private test rotation Tutorial → M01–M11. Existing volumes retain their settings and require the update described below. New volumes start with a password and no public GameSpy heartbeats. Operators can explicitly enable the public test mode described below. The public repository and image provide a development build; they do not represent a fully validated campaign release.
+**M06, M07 and M09 now include custom coop adaptations; complete playtesting is still pending.** Newly created volumes include the private test rotation Tutorial Ã¢â€ â€™ M01Ã¢â‚¬â€œM11. Existing volumes retain their settings and require the update described below. New volumes start with a password and no public GameSpy heartbeats. Operators can explicitly enable the public test mode described below. The public repository and image provide a development build; they do not represent a fully validated campaign release.
 
 ## Image and workflow
 
@@ -79,18 +79,37 @@ python3 /opt/renegade-coop/bootstrap.py --root /home/container
 
 The installer verifies every release file, backs up replaced binaries/assets, and adds configuration files only when they are missing. Back up the entire volume before a migration as well. To roll back, stop only this server and restore its backed-up volume. **No scripts in this project restart nginx or other host services.**
 
+### Updating only the plugin
+
+For an existing compatible TT 4.8.4 / DA 1.11.1 volume, package the newly built plugin using the SHA256 of the currently installed DLL:
+
+```sh
+python tools/make_plugin_update.py --plugin build/plugin/da_campaign.dll --from-sha256 CURRENT_DLL_SHA256 --output build/coop-update.zip
+```
+
+Stop only the Renegade server, upload the archive, and run:
+
+```sh
+python3 /opt/renegade-coop/tools/update_plugin.py --root /home/container --payload /home/container/coop-update.zip
+```
+
+The updater verifies the old/new binary hashes, updates the live and release manifests, backs up every changed file and adds missing campaign settings. Existing operator values, admin names, rotation and game assets are preserved. Interrupted writes are rolled back. Starting the regular runtime resumes the last active mission from its beginning. Updates never reload nginx or other host services.
+
 ## Development status
 
 - Previous private hosting checks passed for Tutorial startup on Windows and Wine, the panel console, clean shutdown/restart, external GameSpy queries and HTTP package downloads.
-- CoopBeta supplies Tutorial, M01–M05, M08, M10 and M11. Complete mission playthroughs have not yet been verified.
+- CoopBeta supplies Tutorial, M01Ã¢â‚¬â€œM05, M08, M10 and M11. Complete mission playthroughs have not yet been verified.
 - M06: shared War Room computer hacking, scientist rescue, Sydney escort and the Mendoza objective. The computer trigger runs once and survives an interrupted dialogue.
 - M07: shared Dead6/Sydney, SAM, SSM and nuclear objectives. Individual player deaths do not cause mission failure; deaths of required escort characters do.
 - M09: Mobius escort with the protective suit, surface and rendezvous stages. The suit sequence runs without a single-player camera or teleport. Evacuation requires Mobius and at least one living player in the destination area.
 - All three: shared objectives/keys, safe respawns at the mission start or a reached checkpoint, late-join synchronization, GDI team, and no friendly fire, team switching or time limit. Success advances to the next map; failure reloads the same map. A server or map restart discards the checkpoint.
 - Damage correction for M06/M07/M09: CoopBeta's `Commando_Stealth` and `Commando_Desert` presets use invulnerable `Blamo` armor. When placing a human campaign player, the plugin replaces it with Havoc's normal skin/armor types. The model, weapons and health are preserved; NPC presets are unchanged. Isolated engine tests confirm damage and death on all three maps ([test report](validation/player-armor-2026-10-20.json)); testing with a real player is still pending.
 - Original LVL files supply positions and scripts for missing NPCs. The installer generates private `.wcm` tables from them; the plugin restores placed soldiers omitted by the FDS. Original level files remain unchanged. These three maps use their original game assets plus the existing CoopContent package.
-- The legacy `!goto` command has not yet been ported.
-- Supply features apply to Tutorial and M01–M11: fixed weapon pickups and keycards respawn after collection. Later NPC/player drops are not tracked. Mission scripts attached to the original pickup are not copied to replacements, preventing one-time mission events from firing again. Map objects removed by a mission script without being collected are not restored.
+- Catch-up commands: `!cp` returns to the reached shared checkpoint (M06/M07/M09) or latest reached supply terminal (legacy maps); `!goto <player>` moves to a connected teammate. Both require living characters on foot, three seconds without movement, ten seconds out of combat and a thirty-second cooldown. Restricted sequences, ladders, elevators and unsafe destinations are rejected. Weapons, health and credits are preserved. Legacy respawns also use reached supply points; purchased characters keep their position.
+- `!skin` lists eight cosmetic appearances: Havoc, soldier, engineer, Hotwire, Gunner, Patch, Mobius and Sydney. `!skin default` restores the current class model. A skin changes appearance only, persists through respawns/maps for the current connection, and grants no equipment or armor.
+- `!donate <player name/ID> <credits>` transfers whole credits to a teammate. `!tdonate <credits>` splits the amount equally among other connected teammates; the remainder stays with the sender. Invalid amounts, insufficient funds, self-transfers and empty teams are rejected.
+- Adaptive difficulty counts connected teammates, including players waiting to respawn. After the count stays stable for fifteen seconds, enemy resistance is `1 + 0.35 Ã— (players âˆ’ 1)` and enemy damage is `1 + 0.08 Ã— (players âˆ’ 1)`, clamped to one through eight players. Solo retains original damage; eight players use resistance 3.45 and damage 1.56. This scales combat damage between human-controlled GDI units and Nod AI soldiers/occupied vehicles. It does not alter maximum health, heal existing enemies, or scale buildings, escorts, neutral objects and unattributed scripted damage. This is a configurable Novara implementation; the Exodus formula is unknown. `!difficulty` reports the current values.
+- Supply features apply to Tutorial and M01Ã¢â‚¬â€œM11: fixed weapon pickups and keycards respawn after collection. Later NPC/player drops are not tracked. Mission scripts attached to the original pickup are not copied to replacements, preventing one-time mission events from firing again. Map objects removed by a mission script without being collected are not restored.
 - Shared keycards synchronize to all living players, respawns and late joiners. Explicitly revoked keys remain unavailable until granted again.
 - Purchase terminals open the existing GDI infantry menu using the Use key or `!buy`/`!pt` within 6 meters. They appear at the first player spawn, reached checkpoints and reached fixed weapon locations, with configurable minimum spacing. Each position was accessible to a player; the console does not block movement. Purchases preserve position and keys, apply for the current life, and use existing GDI prices. Client presentation and complete mission playthroughs still need playtesting.
 - Dragonade's query currently reports `TC=1` because of an upstream factory check, even though the configuration and plugin block team switching. Verify this with real clients and correct the reported value.
@@ -111,6 +130,8 @@ With diagnostics enabled, `campaign_test_player_armor` uses a synthetic actor on
 `campaign_supplies` displays tracked weapons/keycards and purchase terminals. On an empty diagnostic server, `campaign_test_supplies` uses a synthetic collection notification to check replenishment and the exclusion of later drops. This does not replace a real client test of pickups or the purchase menu.
 
 The [supply test report](validation/coop-services-2026-10-20.json) records map-loading checks for all twelve maps and successful respawn probes on M06/M07/M09. Replacement objects stayed exactly at their pickup locations. The purchase menu, actual purchases and shared key ownership with multiple clients have not yet passed gameplay acceptance.
+
+`campaign_test_features` checks the eight cosmetic models and preservation of the synthetic actor's class, health, armor, weapons, keys and position. On M06/M07/M09 it also tests collision-safe movement to the mission spawn. It requires diagnostics and an empty server. These engine checks do not validate client rendering, live chat interactions or a complete mission. Pure C++ tests additionally cover credit conservation/rejection, the one-to-eight-player curve and timer rollover. The [feature test report](validation/coop-features-2026-10-20.json) records passing engine probes on all twelve maps and the remaining real-client checks. Repeat them on an empty, password-protected native FDS with `python tools/test_native_features.py --root PATH_TO_FDS --host TEST_IP --port QUERY_PORT --output evidence.json`; this advances the Tutorial → M01–M11 rotation using `gameover`.
 
 ## Configuration in the panel
 
@@ -134,9 +155,20 @@ Coop settings in the `[General]` section of `server/da.ini`:
 | `CampaignTerminals` | `1` | Enable purchase terminals |
 | `CampaignTerminalSpacing` | `75` | Minimum spacing between terminals at weapon locations |
 | `CampaignTerminalModel` | `o_nod_console-o` | Existing console model |
+| `CampaignCatchup` | `1` | Checkpoint commands and legacy respawns at reached supply terminals |
+| `CampaignPlayerGoto` | `1` | Teleport to a connected teammate |
+| `CampaignCatchupWarmupSeconds` | `3` | Time to stand still before teleporting |
+| `CampaignCatchupCombatSeconds` | `10` | Required time since dealing/taking damage |
+| `CampaignCatchupCooldownSeconds` | `30` | Delay between successful catch-up commands |
+| `CampaignSkins` | `1` | Cosmetic skin commands |
+| `CampaignDonations` | `1` | Validated player/team credit transfers; keep `EnableDonate=0` |
+| `CampaignAdaptiveDifficulty` | `1` | Scale AI combat damage by connected player count |
+| `CampaignEnemyResistancePerPlayer` | `0.35` | Additional resistance per player after the first, range 0â€“2 |
+| `CampaignEnemyDamagePerPlayer` | `0.08` | Additional enemy damage per player, range 0â€“1 |
+| `CampaignDifficultyUpdateSeconds` | `15` | Stable player count required before difficulty changes |
 | `CampaignAdminName` | empty | Player name allowed to request administrator approval |
 
-Dragonade supports map-specific overrides in sections such as `[M06.mix]`. Terminal placement and supply tracking are initialized for each map; change maps or restart the server after changing their settings. Adaptive difficulty has not yet been implemented.
+Dragonade supports map-specific overrides in sections such as `[M06.mix]`. Terminal placement and supply tracking are initialized for each map; change maps or restart the server after changing their settings. Command timing settings are clamped to 0â€“300 seconds. `!help` lists player commands; `campaign_features` in the panel prints checkpoint availability and active difficulty. The adaptive values are defaults for playtesting and can be tuned per mission.
 
 ### Administrator approval
 

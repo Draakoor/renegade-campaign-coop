@@ -1,0 +1,312 @@
+{
+  "date": "2026-10-20",
+  "environment": "Isolated Windows x86 FDS / TT 4.8.4 / Dragonade 1.11.1",
+  "human_clients": 0,
+  "plugin_sha256": "299c3679bf7007bb337ef235e3a5480840c6b54301c4f9394548ad24bb06b61f",
+  "automated_checks": {
+    "python_tests": 28,
+    "shared_objective_orderings": 150,
+    "credit_rules": "validation, conservation, insufficient funds, self/duplicate recipients, empty team, nonfinite balances, remainder retention",
+    "difficulty": "one through eight players, solo baseline, clamped/nonfinite settings",
+    "timers": "unsigned rollover",
+    "updater": "hash rejection, path rejection, settings preservation, backups, idempotency, rollback after write failure"
+  },
+  "engine_probes": [
+    {
+      "map": "M00_Tutorial",
+      "human_clients": 0,
+      "features": [
+        "[Novara] DIAGNOSTIC loading skin=havoc model=c_ag_havoc",
+        "[Novara] DIAGNOSTIC skin=havoc model=c_ag_havoc preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=soldier model=c_ag_gdi_mg",
+        "[Novara] DIAGNOSTIC skin=soldier model=c_ag_gdi_mg preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=engineer model=c_ag_gdi_en",
+        "[Novara] DIAGNOSTIC skin=engineer model=c_ag_gdi_en preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=hotwire model=c_ag_gdi_hotw",
+        "[Novara] DIAGNOSTIC skin=hotwire model=c_ag_gdi_hotw preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=gunner model=c_ag_gdi_gun",
+        "[Novara] DIAGNOSTIC skin=gunner model=c_ag_gdi_gun preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=patch model=c_ag_gdi_dead",
+        "[Novara] DIAGNOSTIC skin=patch model=c_ag_gdi_dead preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=mobius model=c_ag_gdi_mobi",
+        "[Novara] DIAGNOSTIC skin=mobius model=c_ag_gdi_mobi preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=sydney model=c_ag_gdi_psyd",
+        "[Novara] DIAGNOSTIC skin=sydney model=c_ag_gdi_psyd preserved=1",
+        "[Novara] DIAGNOSTIC features result=PASS skins=8 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+      ]
+    },
+    {
+      "map": "M01",
+      "human_clients": 0,
+      "features": [
+        "[Novara] DIAGNOSTIC loading skin=havoc model=c_ag_havoc",
+        "[Novara] DIAGNOSTIC skin=havoc model=c_ag_havoc preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=soldier model=c_ag_gdi_mg",
+        "[Novara] DIAGNOSTIC skin=soldier model=c_ag_gdi_mg preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=engineer model=c_ag_gdi_en",
+        "[Novara] DIAGNOSTIC skin=engineer model=c_ag_gdi_en preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=hotwire model=c_ag_gdi_hotw",
+        "[Novara] DIAGNOSTIC skin=hotwire model=c_ag_gdi_hotw preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=gunner model=c_ag_gdi_gun",
+        "[Novara] DIAGNOSTIC skin=gunner model=c_ag_gdi_gun preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=patch model=c_ag_gdi_dead",
+        "[Novara] DIAGNOSTIC skin=patch model=c_ag_gdi_dead preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=mobius model=c_ag_gdi_mobi",
+        "[Novara] DIAGNOSTIC skin=mobius model=c_ag_gdi_mobi preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=sydney model=c_ag_gdi_psyd",
+        "[Novara] DIAGNOSTIC skin=sydney model=c_ag_gdi_psyd preserved=1",
+        "[Novara] DIAGNOSTIC features result=PASS skins=8 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+      ]
+    },
+    {
+      "map": "M02",
+      "human_clients": 0,
+      "features": [
+        "[Novara] DIAGNOSTIC loading skin=havoc model=c_ag_havoc",
+        "[Novara] DIAGNOSTIC skin=havoc model=c_ag_havoc preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=soldier model=c_ag_gdi_mg",
+        "[Novara] DIAGNOSTIC skin=soldier model=c_ag_gdi_mg preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=engineer model=c_ag_gdi_en",
+        "[Novara] DIAGNOSTIC skin=engineer model=c_ag_gdi_en preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=hotwire model=c_ag_gdi_hotw",
+        "[Novara] DIAGNOSTIC skin=hotwire model=c_ag_gdi_hotw preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=gunner model=c_ag_gdi_gun",
+        "[Novara] DIAGNOSTIC skin=gunner model=c_ag_gdi_gun preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=patch model=c_ag_gdi_dead",
+        "[Novara] DIAGNOSTIC skin=patch model=c_ag_gdi_dead preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=mobius model=c_ag_gdi_mobi",
+        "[Novara] DIAGNOSTIC skin=mobius model=c_ag_gdi_mobi preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=sydney model=c_ag_gdi_psyd",
+        "[Novara] DIAGNOSTIC skin=sydney model=c_ag_gdi_psyd preserved=1",
+        "[Novara] DIAGNOSTIC features result=PASS skins=8 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+      ]
+    },
+    {
+      "map": "M03",
+      "human_clients": 0,
+      "features": [
+        "[Novara] DIAGNOSTIC loading skin=havoc model=c_ag_havoc",
+        "[Novara] DIAGNOSTIC skin=havoc model=c_ag_havoc preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=soldier model=c_ag_gdi_mg",
+        "[Novara] DIAGNOSTIC skin=soldier model=c_ag_gdi_mg preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=engineer model=c_ag_gdi_en",
+        "[Novara] DIAGNOSTIC skin=engineer model=c_ag_gdi_en preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=hotwire model=c_ag_gdi_hotw",
+        "[Novara] DIAGNOSTIC skin=hotwire model=c_ag_gdi_hotw preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=gunner model=c_ag_gdi_gun",
+        "[Novara] DIAGNOSTIC skin=gunner model=c_ag_gdi_gun preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=patch model=c_ag_gdi_dead",
+        "[Novara] DIAGNOSTIC skin=patch model=c_ag_gdi_dead preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=mobius model=c_ag_gdi_mobi",
+        "[Novara] DIAGNOSTIC skin=mobius model=c_ag_gdi_mobi preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=sydney model=c_ag_gdi_psyd",
+        "[Novara] DIAGNOSTIC skin=sydney model=c_ag_gdi_psyd preserved=1",
+        "[Novara] DIAGNOSTIC features result=PASS skins=8 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+      ]
+    },
+    {
+      "map": "M04",
+      "human_clients": 0,
+      "features": [
+        "[Novara] DIAGNOSTIC loading skin=havoc model=c_ag_havoc",
+        "[Novara] DIAGNOSTIC skin=havoc model=c_ag_havoc preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=soldier model=c_ag_gdi_mg",
+        "[Novara] DIAGNOSTIC skin=soldier model=c_ag_gdi_mg preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=engineer model=c_ag_gdi_en",
+        "[Novara] DIAGNOSTIC skin=engineer model=c_ag_gdi_en preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=hotwire model=c_ag_gdi_hotw",
+        "[Novara] DIAGNOSTIC skin=hotwire model=c_ag_gdi_hotw preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=gunner model=c_ag_gdi_gun",
+        "[Novara] DIAGNOSTIC skin=gunner model=c_ag_gdi_gun preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=patch model=c_ag_gdi_dead",
+        "[Novara] DIAGNOSTIC skin=patch model=c_ag_gdi_dead preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=mobius model=c_ag_gdi_mobi",
+        "[Novara] DIAGNOSTIC skin=mobius model=c_ag_gdi_mobi preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=sydney model=c_ag_gdi_psyd",
+        "[Novara] DIAGNOSTIC skin=sydney model=c_ag_gdi_psyd preserved=1",
+        "[Novara] DIAGNOSTIC features result=PASS skins=8 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+      ]
+    },
+    {
+      "map": "M05",
+      "human_clients": 0,
+      "features": [
+        "[Novara] DIAGNOSTIC loading skin=havoc model=c_ag_havoc",
+        "[Novara] DIAGNOSTIC skin=havoc model=c_ag_havoc preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=soldier model=c_ag_gdi_mg",
+        "[Novara] DIAGNOSTIC skin=soldier model=c_ag_gdi_mg preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=engineer model=c_ag_gdi_en",
+        "[Novara] DIAGNOSTIC skin=engineer model=c_ag_gdi_en preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=hotwire model=c_ag_gdi_hotw",
+        "[Novara] DIAGNOSTIC skin=hotwire model=c_ag_gdi_hotw preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=gunner model=c_ag_gdi_gun",
+        "[Novara] DIAGNOSTIC skin=gunner model=c_ag_gdi_gun preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=patch model=c_ag_gdi_dead",
+        "[Novara] DIAGNOSTIC skin=patch model=c_ag_gdi_dead preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=mobius model=c_ag_gdi_mobi",
+        "[Novara] DIAGNOSTIC skin=mobius model=c_ag_gdi_mobi preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=sydney model=c_ag_gdi_psyd",
+        "[Novara] DIAGNOSTIC skin=sydney model=c_ag_gdi_psyd preserved=1",
+        "[Novara] DIAGNOSTIC features result=PASS skins=8 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+      ]
+    },
+    {
+      "map": "M06",
+      "human_clients": 0,
+      "features": [
+        "[Novara] DIAGNOSTIC loading skin=havoc model=c_ag_havoc",
+        "[Novara] DIAGNOSTIC skin=havoc model=c_ag_havoc preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=soldier model=c_ag_gdi_mg",
+        "[Novara] DIAGNOSTIC skin=soldier model=c_ag_gdi_mg preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=engineer model=c_ag_gdi_en",
+        "[Novara] DIAGNOSTIC skin=engineer model=c_ag_gdi_en preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=hotwire model=c_ag_gdi_hotw",
+        "[Novara] DIAGNOSTIC skin=hotwire model=c_ag_gdi_hotw preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=gunner model=c_ag_gdi_gun",
+        "[Novara] DIAGNOSTIC skin=gunner model=c_ag_gdi_gun preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=patch model=c_ag_gdi_dead",
+        "[Novara] DIAGNOSTIC skin=patch model=c_ag_gdi_dead preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=mobius model=c_ag_gdi_mobi",
+        "[Novara] DIAGNOSTIC skin=mobius model=c_ag_gdi_mobi preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=sydney model=c_ag_gdi_psyd",
+        "[Novara] DIAGNOSTIC skin=sydney model=c_ag_gdi_psyd preserved=1",
+        "[Novara] DIAGNOSTIC features result=PASS skins=8 checkpoint=1 moved=1 distance=0.019; synthetic actor, no human playtest."
+      ],
+      "armor": [
+        "[Campaign] DIAGNOSTIC armor before=200.0 legacy_after_hit=200.0 preserved=1 skin=SkinFlesh armor=ShieldKevlar",
+        "[Campaign] DIAGNOSTIC armor fixed_after_hit=100.0 lethal=1 result=PASS; synthetic actor, no human playtest."
+      ]
+    },
+    {
+      "map": "M07",
+      "human_clients": 0,
+      "features": [
+        "[Novara] DIAGNOSTIC loading skin=havoc model=c_ag_havoc",
+        "[Novara] DIAGNOSTIC skin=havoc model=c_ag_havoc preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=soldier model=c_ag_gdi_mg",
+        "[Novara] DIAGNOSTIC skin=soldier model=c_ag_gdi_mg preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=engineer model=c_ag_gdi_en",
+        "[Novara] DIAGNOSTIC skin=engineer model=c_ag_gdi_en preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=hotwire model=c_ag_gdi_hotw",
+        "[Novara] DIAGNOSTIC skin=hotwire model=c_ag_gdi_hotw preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=gunner model=c_ag_gdi_gun",
+        "[Novara] DIAGNOSTIC skin=gunner model=c_ag_gdi_gun preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=patch model=c_ag_gdi_dead",
+        "[Novara] DIAGNOSTIC skin=patch model=c_ag_gdi_dead preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=mobius model=c_ag_gdi_mobi",
+        "[Novara] DIAGNOSTIC skin=mobius model=c_ag_gdi_mobi preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=sydney model=c_ag_gdi_psyd",
+        "[Novara] DIAGNOSTIC skin=sydney model=c_ag_gdi_psyd preserved=1",
+        "[Novara] DIAGNOSTIC features result=PASS skins=8 checkpoint=1 moved=1 distance=0.276; synthetic actor, no human playtest."
+      ],
+      "armor": [
+        "[Campaign] DIAGNOSTIC armor before=200.0 legacy_after_hit=200.0 preserved=1 skin=SkinFlesh armor=ShieldKevlar",
+        "[Campaign] DIAGNOSTIC armor fixed_after_hit=100.0 lethal=1 result=PASS; synthetic actor, no human playtest."
+      ]
+    },
+    {
+      "map": "M08",
+      "human_clients": 0,
+      "features": [
+        "[Novara] DIAGNOSTIC loading skin=havoc model=c_ag_havoc",
+        "[Novara] DIAGNOSTIC skin=havoc model=c_ag_havoc preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=soldier model=c_ag_gdi_mg",
+        "[Novara] DIAGNOSTIC skin=soldier model=c_ag_gdi_mg preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=engineer model=c_ag_gdi_en",
+        "[Novara] DIAGNOSTIC skin=engineer model=c_ag_gdi_en preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=hotwire model=c_ag_gdi_hotw",
+        "[Novara] DIAGNOSTIC skin=hotwire model=c_ag_gdi_hotw preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=gunner model=c_ag_gdi_gun",
+        "[Novara] DIAGNOSTIC skin=gunner model=c_ag_gdi_gun preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=patch model=c_ag_gdi_dead",
+        "[Novara] DIAGNOSTIC skin=patch model=c_ag_gdi_dead preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=mobius model=c_ag_gdi_mobi",
+        "[Novara] DIAGNOSTIC skin=mobius model=c_ag_gdi_mobi preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=sydney model=c_ag_gdi_psyd",
+        "[Novara] DIAGNOSTIC skin=sydney model=c_ag_gdi_psyd preserved=1",
+        "[Novara] DIAGNOSTIC features result=PASS skins=8 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+      ]
+    },
+    {
+      "map": "M09",
+      "human_clients": 0,
+      "features": [
+        "[Novara] DIAGNOSTIC loading skin=havoc model=c_ag_havoc",
+        "[Novara] DIAGNOSTIC skin=havoc model=c_ag_havoc preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=soldier model=c_ag_gdi_mg",
+        "[Novara] DIAGNOSTIC skin=soldier model=c_ag_gdi_mg preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=engineer model=c_ag_gdi_en",
+        "[Novara] DIAGNOSTIC skin=engineer model=c_ag_gdi_en preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=hotwire model=c_ag_gdi_hotw",
+        "[Novara] DIAGNOSTIC skin=hotwire model=c_ag_gdi_hotw preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=gunner model=c_ag_gdi_gun",
+        "[Novara] DIAGNOSTIC skin=gunner model=c_ag_gdi_gun preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=patch model=c_ag_gdi_dead",
+        "[Novara] DIAGNOSTIC skin=patch model=c_ag_gdi_dead preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=mobius model=c_ag_gdi_mobi",
+        "[Novara] DIAGNOSTIC skin=mobius model=c_ag_gdi_mobi preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=sydney model=c_ag_gdi_psyd",
+        "[Novara] DIAGNOSTIC skin=sydney model=c_ag_gdi_psyd preserved=1",
+        "[Novara] DIAGNOSTIC features result=PASS skins=8 checkpoint=1 moved=1 distance=0.001; synthetic actor, no human playtest."
+      ],
+      "armor": [
+        "[Campaign] DIAGNOSTIC armor before=200.0 legacy_after_hit=200.0 preserved=1 skin=SkinFlesh armor=ShieldKevlar",
+        "[Campaign] DIAGNOSTIC armor fixed_after_hit=100.0 lethal=1 result=PASS; synthetic actor, no human playtest."
+      ]
+    },
+    {
+      "map": "M10",
+      "human_clients": 0,
+      "features": [
+        "[Novara] DIAGNOSTIC loading skin=havoc model=c_ag_havoc",
+        "[Novara] DIAGNOSTIC skin=havoc model=c_ag_havoc preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=soldier model=c_ag_gdi_mg",
+        "[Novara] DIAGNOSTIC skin=soldier model=c_ag_gdi_mg preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=engineer model=c_ag_gdi_en",
+        "[Novara] DIAGNOSTIC skin=engineer model=c_ag_gdi_en preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=hotwire model=c_ag_gdi_hotw",
+        "[Novara] DIAGNOSTIC skin=hotwire model=c_ag_gdi_hotw preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=gunner model=c_ag_gdi_gun",
+        "[Novara] DIAGNOSTIC skin=gunner model=c_ag_gdi_gun preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=patch model=c_ag_gdi_dead",
+        "[Novara] DIAGNOSTIC skin=patch model=c_ag_gdi_dead preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=mobius model=c_ag_gdi_mobi",
+        "[Novara] DIAGNOSTIC skin=mobius model=c_ag_gdi_mobi preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=sydney model=c_ag_gdi_psyd",
+        "[Novara] DIAGNOSTIC skin=sydney model=c_ag_gdi_psyd preserved=1",
+        "[Novara] DIAGNOSTIC features result=PASS skins=8 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+      ]
+    },
+    {
+      "map": "M11",
+      "human_clients": 0,
+      "features": [
+        "[Novara] DIAGNOSTIC loading skin=havoc model=c_ag_havoc",
+        "[Novara] DIAGNOSTIC skin=havoc model=c_ag_havoc preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=soldier model=c_ag_gdi_mg",
+        "[Novara] DIAGNOSTIC skin=soldier model=c_ag_gdi_mg preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=engineer model=c_ag_gdi_en",
+        "[Novara] DIAGNOSTIC skin=engineer model=c_ag_gdi_en preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=hotwire model=c_ag_gdi_hotw",
+        "[Novara] DIAGNOSTIC skin=hotwire model=c_ag_gdi_hotw preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=gunner model=c_ag_gdi_gun",
+        "[Novara] DIAGNOSTIC skin=gunner model=c_ag_gdi_gun preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=patch model=c_ag_gdi_dead",
+        "[Novara] DIAGNOSTIC skin=patch model=c_ag_gdi_dead preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=mobius model=c_ag_gdi_mobi",
+        "[Novara] DIAGNOSTIC skin=mobius model=c_ag_gdi_mobi preserved=1",
+        "[Novara] DIAGNOSTIC loading skin=sydney model=c_ag_gdi_psyd",
+        "[Novara] DIAGNOSTIC skin=sydney model=c_ag_gdi_psyd preserved=1",
+        "[Novara] DIAGNOSTIC features result=PASS skins=8 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+      ]
+    }
+  ],
+  "pending": [
+    "Client rendering of cosmetic skins and default reset",
+    "Actual chat commands, purchase menu and credit transfers between real clients",
+    "Combat cancellation, disconnect/ID reuse and mission restrictions with real clients",
+    "Adaptive combat damage with real players joining/leaving",
+    "Complete solo playthrough of Tutorial and M01-M11",
+    "Two-client campaign acceptance and eight-client load test"
+  ]
+}
