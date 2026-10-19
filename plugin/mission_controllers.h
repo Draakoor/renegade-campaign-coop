@@ -116,14 +116,14 @@ class M06_Objective_Controller : public ScriptImpClass // 100018
 		mendoza_id = 0;
         Commands->Start_Timer(obj, this, 35.0f, 90060);
 		accomplished_609 = false;
-		
+
 		// EVA - Give me a position on the scientists.\n
 		const char *conv_name = ("M06_CON059");
 		int conv_id = Commands->Create_Conversation (conv_name, 100.0f, 200.0f, false);
 		Commands->Join_Conversation((Commands->Get_A_Star(Commands->Get_Position(Owner()))), conv_id, false, true, true);
 		Commands->Join_Conversation(NULL, conv_id, false, true, true);
 		Commands->Start_Conversation (conv_id, 300601);
-		Commands->Monitor_Conversation (obj, conv_id);	
+		Commands->Monitor_Conversation (obj, conv_id);
 
 		Add_An_Objective(605);
 		Add_An_Objective(607);
@@ -137,11 +137,11 @@ class M06_Objective_Controller : public ScriptImpClass // 100018
 	void Add_An_Objective(int id)
 	{
 		GameObject *object;
-						
+
 		switch (id)
 		{
 		// Hack War Room Computer
-		case 601: 
+		case 601:
 			{
 				Commands->Add_Objective(601, OBJECTIVE_TYPE_PRIMARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Primary_M06_02, NULL, IDS_Enc_Obj_Primary_M06_02);
 				object = Commands->Find_Object(106952);
@@ -153,7 +153,7 @@ class M06_Objective_Controller : public ScriptImpClass // 100018
 			}
 			break;
 		// Rescue Scientists
-		case 603: 
+		case 603:
 			{
 				Commands->Add_Objective(603, OBJECTIVE_TYPE_PRIMARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Primary_M06_01, NULL, IDS_Enc_Obj_Primary_M06_01);
 				object = Commands->Find_Object(101010);
@@ -165,7 +165,7 @@ class M06_Objective_Controller : public ScriptImpClass // 100018
 			}
 			break;
 		// Eliminate Mendoza
-		case 604: 
+		case 604:
 			{
 				Commands->Add_Objective(604, OBJECTIVE_TYPE_PRIMARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Primary_M06_04, NULL, IDS_Enc_Obj_Primary_M06_04);
 			//	object = Commands->Find_Object(mendoza_id);
@@ -178,27 +178,27 @@ class M06_Objective_Controller : public ScriptImpClass // 100018
 			}
 			break;
 		// Rescue Resistance
-		case 605: 
+		case 605:
 			{
 				Commands->Add_Objective(605, OBJECTIVE_TYPE_TERTIARY, OBJECTIVE_STATUS_HIDDEN, IDS_Enc_ObjTitle_Hidden_M06_02, NULL, IDS_Enc_Obj_Hidden_M06_02);
 				object = Commands->Find_Object(101016);
-				
+
 			}
 			break;
 		// Release GDI prisoner
-		case 607: 
+		case 607:
 			{
 				Commands->Add_Objective(607, OBJECTIVE_TYPE_TERTIARY, OBJECTIVE_STATUS_HIDDEN, IDS_Enc_ObjTitle_Hidden_M06_03, NULL, IDS_Enc_Obj_Hidden_M06_03);
 			}
 			break;
 		// Plunder Raveshaw's hidden cache
-		case 608: 
+		case 608:
 			{
 				Commands->Add_Objective(608, OBJECTIVE_TYPE_TERTIARY, OBJECTIVE_STATUS_HIDDEN, IDS_Enc_ObjTitle_Hidden_M06_04, NULL, IDS_Enc_Obj_Hidden_M06_04);
 			}
 			break;
 		// Deactivate alarm system
-		case 609: 
+		case 609:
 			{
 				Commands->Add_Objective(609, OBJECTIVE_TYPE_SECONDARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Hidden_M06_01, NULL, IDS_Enc_Obj_Hidden_M06_01);
 				Vector3 star_pos = Commands->Get_Position((Commands->Get_A_Star(Commands->Get_Position(Owner()))));
@@ -226,17 +226,17 @@ class M06_Objective_Controller : public ScriptImpClass // 100018
 				}
 
 
-				
+
 			}
 			break;
 		// Alarm State: Stand Down
-		case 610: 
+		case 610:
 			{
 				Commands->Add_Objective(610, OBJECTIVE_TYPE_SECONDARY, OBJECTIVE_STATUS_HIDDEN, 1000, NULL, 0);
 			}
 			break;
 		// Escape Chateau with Dr. Sydney Mobius
-		case 611: 
+		case 611:
 			{
 				Commands->Set_HUD_Help_Text ( IDS_M11DSGN_DSGN1007I1DSGN_TXT, Vector3(.196f,.882f,.196f) );
 				Commands->Add_Objective(611, OBJECTIVE_TYPE_PRIMARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Primary_M06_03, NULL, IDS_Enc_Obj_Primary_M06_03);
@@ -256,11 +256,11 @@ class M06_Objective_Controller : public ScriptImpClass // 100018
 		if(type == M06_MENDOZA_ID)
 		{
 			mendoza_id = param;
-			
+
 		}
 		if(type == 666 && param == 666)
 		{
-			
+
 			Commands->Start_Timer (obj, this, 2.0f, M06_DEAD_HAVOC);
 		}
 		if(type > 611)
@@ -269,7 +269,7 @@ class M06_Objective_Controller : public ScriptImpClass // 100018
 		}
 		switch (param)
 		{
-			case 1: 
+			case 1:
 				{
 					if(type == 609 && accomplished_609)
 					{
@@ -285,7 +285,7 @@ class M06_Objective_Controller : public ScriptImpClass // 100018
 					{
 						accomplished_609 = true;
 					}
-						
+
 
 				}
 				break;
@@ -299,17 +299,17 @@ class M06_Objective_Controller : public ScriptImpClass // 100018
 					}
 				}
 				break;
-			case 3: 
+			case 3:
 					Add_An_Objective(type);
 				break;
-			case 4: 
+			case 4:
 					Commands->Set_Objective_Status(type, OBJECTIVE_STATUS_PENDING);
 				break;
-			case 5: 
+			case 5:
 					Commands->Set_Objective_Status(type, OBJECTIVE_STATUS_HIDDEN);
 				break;
 		}
-		
+
 	}
 
 	void Action_Complete(GameObject * obj, int action_id, ActionCompleteReason reason)
@@ -319,10 +319,10 @@ class M06_Objective_Controller : public ScriptImpClass // 100018
 			Commands->Send_Custom_Event(obj, Commands->Find_Object(100018), 601, 3, 0.0f);
 		}
 	}
-	
+
 	void Timer_Expired(GameObject * obj, int timer_id )
 	{
-		
+
 		if (timer_id == 90006) {
             if (!Campaign::HasPlayers()) Commands->Start_Timer(obj, this, 1.0f, 90006);
             else Start_Opening(obj);
@@ -331,25 +331,25 @@ class M06_Objective_Controller : public ScriptImpClass // 100018
         if(timer_id == HAVOCS_SCRIPT)
 		{
 	//		Commands->Attach_Script((Commands->Get_A_Star(Commands->Get_Position(Owner()))), "M06_Havoc_DLS", "");
-			
+
 		}
 		if(timer_id == M06_DEAD_HAVOC)
 		{
-		
+
 	//		Commands->Attach_Script((Commands->Get_A_Star(Commands->Get_Position(Owner()))), "M06_Havoc_DLS", "");
-			
+
 		}
 
 		if(timer_id == M06_INITIAL_APACHES)
 		{
-		
+
 			// Initial Apaches
 			GameObject *controller1 = Commands->Create_Object("Invisible_Object", Vector3(0,0,0));
 			Commands->Attach_Script(controller1, "Test_Cinematic", "X6A_Apache_01.txt");
-				
+
 			GameObject *controller2 = Commands->Create_Object("Invisible_Object", Vector3(0,0,0));
 			Commands->Attach_Script(controller2, "Test_Cinematic", "X6A_Apache_02.txt");
-			
+
 		}
 	}
 
@@ -361,7 +361,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 	bool accomplished_705;
     bool opening_done = false;
 	bool accomplished_701;
-	
+
 	enum {HAVOCS_SCRIPT, M07_DEAD_HAVOC, INITIAL_CONV, PROTECT_TEAM};
 
 	void Created(GameObject * obj)
@@ -380,11 +380,11 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 	void Add_An_Objective(int id)
 	{
 		GameObject *object;
-						
+
 		switch (id)
 		{
 		// Evacuate Sydney
-		case 701: 
+		case 701:
 			{
 				Commands->Add_Objective(701, OBJECTIVE_TYPE_PRIMARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Primary_M07_01, NULL, IDS_Enc_Obj_Primary_M07_01);
 				object = Commands->Find_Object(100664);
@@ -397,7 +397,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 			}
 			break;
 		// Secure SAM Sites
-		case 702: 
+		case 702:
 			{
 				Commands->Add_Objective(702, OBJECTIVE_TYPE_PRIMARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Primary_M07_03, NULL, IDS_Enc_Obj_Primary_M07_03);
 				object = Commands->Find_Object(100673);
@@ -410,7 +410,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 			}
 			break;
 		// Destroy SSM Launchers
-		case 703: 
+		case 703:
 			{
 				Commands->Add_Objective(703, OBJECTIVE_TYPE_PRIMARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Primary_M07_04, NULL, IDS_Enc_Obj_Primary_M07_04);
 				object = Commands->Find_Object(100798);
@@ -422,7 +422,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 			}
 			break;
 		// Destroy Radar Installations
-		case 704: 
+		case 704:
 			{
 				Commands->Add_Objective(704, OBJECTIVE_TYPE_SECONDARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Secondary_M07_01, NULL, IDS_Enc_Obj_Secondary_M07_01);
 				object = Commands->Find_Object(100721);
@@ -434,7 +434,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 			}
 			break;
 		// Rescue Resistance
-		case 705: 
+		case 705:
 			{
 				Commands->Add_Objective(705, OBJECTIVE_TYPE_SECONDARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Secondary_M07_02, NULL, IDS_Enc_Obj_Secondary_M07_02);
 				object = Commands->Find_Object(115842);
@@ -446,7 +446,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 			}
 			break;
 		// Destroy Napalm Stockpile
-		case 706: 
+		case 706:
 			{
 				Commands->Add_Objective(706, OBJECTIVE_TYPE_SECONDARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Secondary_M07_03, NULL, IDS_Enc_Obj_Secondary_M07_03);
 				object = Commands->Find_Object(100781);
@@ -458,7 +458,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 			}
 			break;
 		// Destroy Stealth Tank
-		case 707: 
+		case 707:
 			{
 				Commands->Add_Objective(707, OBJECTIVE_TYPE_SECONDARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Secondary_M07_04, NULL, IDS_Enc_Obj_Secondary_M07_04);
 				object = Commands->Find_Object(100801);
@@ -470,7 +470,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 			}
 			break;
 		// Defeat Obelisk
-		case 708: 
+		case 708:
 			{
 				Commands->Add_Objective(708, OBJECTIVE_TYPE_SECONDARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Secondary_M07_05, NULL, IDS_Enc_Obj_Secondary_M07_05);
 				object = Commands->Find_Object(168926);
@@ -482,7 +482,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 			}
 			break;
 		// Protect Team Members
-		case 709: 
+		case 709:
 			{
 				Commands->Add_Objective(709, OBJECTIVE_TYPE_PRIMARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Primary_M07_05, NULL, IDS_Enc_Obj_Primary_M07_05);
 				object = Commands->Find_Object(100717);
@@ -495,7 +495,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 			}
 			break;
 		// Escape Nuclear Strike
-		case 710: 
+		case 710:
 			{
 				Commands->Add_Objective(710, OBJECTIVE_TYPE_PRIMARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Primary_M07_02, NULL, IDS_Enc_Obj_Primary_M07_02);
 				object = Commands->Find_Object(100717);
@@ -514,7 +514,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 		switch (id)
 		{
 		// Evacuate Dr. Sydney Mobius
-		case 701: 
+		case 701:
 			{
 				Commands->Set_Objective_HUD_Info (701, -1, "POG_M07_1_04.tga", IDS_POG_PROTECT);
 			}
@@ -526,7 +526,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 	{
 		switch (param)
 		{
-			case 1: 
+			case 1:
 				{
 					if(type == 705 && accomplished_705)
 					{
@@ -547,7 +547,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 					{
 						Commands->Mission_Complete ( true );
 					}
-					
+
 				}
 				break;
 			case 2:
@@ -577,19 +577,19 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 					}
 				}
 				break;
-			case 3: 
+			case 3:
 					Add_An_Objective(type);
 				break;
-			case 4: 
+			case 4:
 					Commands->Set_Objective_Status(type, OBJECTIVE_STATUS_PENDING);
 				break;
-			case 5: 
+			case 5:
 					Commands->Set_Objective_Status(type, OBJECTIVE_STATUS_HIDDEN);
 				break;
 		}
 	}
 
-		
+
 	void Timer_Expired(GameObject * obj, int timer_id )
 	{
 		if(timer_id == INITIAL_CONV)
@@ -604,7 +604,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
 			Commands->Join_Conversation(NULL, conv_id, false, true, true);
 			Commands->Join_Conversation(GUNNER, conv_id, true, true, true);
 			Commands->Start_Conversation (conv_id, 300701);
-			Commands->Monitor_Conversation (obj, conv_id);	
+			Commands->Monitor_Conversation (obj, conv_id);
 		}
 		if (timer_id == 90070) Action_Complete(obj, 300701, ACTION_COMPLETE_CONVERSATION_ENDED);
         if(timer_id == PROTECT_TEAM)
@@ -623,7 +623,7 @@ class M07_Objective_Controller : public ScriptImpClass // 100657
             Add_An_Objective(701);
 
 			Commands->Start_Timer (obj, this, 2.0f, PROTECT_TEAM);
-			
+
 			// Start nuclear strike countdown
 			Commands->Send_Custom_Event(obj, Commands->Find_Object(100663), M07_GO_EVAC_SITE, 1, 0.0f);
 			// Customs to move team to evac site
@@ -657,9 +657,9 @@ class M07_Havoc_DLS : public ScriptImpClass
 		Commands->Give_PowerUp(obj, "POW_MineRemote_Player", false);
 	}
 
-	void Custom( GameObject * obj, int type, int param, GameObject * sender ) 
+	void Custom( GameObject * obj, int type, int param, GameObject * sender )
 	{
-		if ( type == M07_NUKE_BLAST ) 
+		if ( type == M07_NUKE_BLAST )
 		{
 			nuke_blast = (param == 1) ? true : false;
 		}
@@ -673,7 +673,7 @@ class M07_Havoc_DLS : public ScriptImpClass
 			{
 				Commands->Apply_Damage( obj, 10000.0f, "DEATH", nullptr);
 			}
-		} 
+		}
 	}
 
 	void Enemy_Seen(GameObject * obj, GameObject *enemy )
@@ -710,7 +710,7 @@ ScriptRegistrant<M07_Havoc_DLS> reg_M07_Havoc_DLS("M07_Havoc_DLS", "");
 
 class M09_Objective_Controller : public ScriptImpClass // Object Controller id: 2000071
 {
-	
+
 	enum {HAVOCS_SCRIPT};
 	bool objective [3];
 	int spawn_loc;
@@ -723,7 +723,7 @@ class M09_Objective_Controller : public ScriptImpClass // Object Controller id: 
 
 		Commands->Start_Timer (obj, this, 1.0f, HAVOCS_SCRIPT);
 		Commands->Enable_Hibernation(obj, false);
-		
+
 		spawn_loc = 0;
 
 		for (int x = 0; x <= 2; x++)
@@ -735,7 +735,7 @@ class M09_Objective_Controller : public ScriptImpClass // Object Controller id: 
 		block2 = 0;
 		block3 = 0;
 		block4 = 0;
-					
+
 	}
 
 	void Remove_Pog(int id)
@@ -743,38 +743,38 @@ class M09_Objective_Controller : public ScriptImpClass // Object Controller id: 
 		switch (id)
 		{
 		// New Primary Mission Objective:  Retrieve the Mobile Power Suit for Dr. Mobius
-		case 901: 
+		case 901:
 			{
 				Commands->Set_Objective_HUD_Info(id, -1, "POG_M09_1_01.tga", IDS_POG_RETRIEVE);
 			}
 			break;
 		// New Primary Mission Objective: Escort Dr. Mobius to the Surface
-		case 902: 
+		case 902:
 			{
 				Commands->Set_Objective_HUD_Info(id, -1, "POG_M09_1_02.tga", IDS_POG_ESCORT);
 			}
 			break;
 		// New Primary Mission Objective: Escort Dr. Mobius to the Rendezvous Point
-		case 903: 
+		case 903:
 			{
 				Commands->Set_Objective_HUD_Info(id, -1, "POG_M09_1_03.tga", IDS_POG_ESCORT);
 			}
-			break;	
+			break;
 		}
 	}
 
 	void Add_An_Objective(int id)
 	{
 		GameObject *object;
-						
+
 		switch (id)
 		{
 		// New Primary Mission Objective:  Protect Mobius
 
-		case 900: 
+		case 900:
 			{
 				Commands->Add_Objective(900, OBJECTIVE_TYPE_PRIMARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Primary_M09_04, NULL, IDS_Enc_Obj_Primary_M09_04);
-				
+
 				object = Commands->Find_Object(2000010);
 				if(object)
 				{
@@ -786,10 +786,10 @@ class M09_Objective_Controller : public ScriptImpClass // Object Controller id: 
 
 		// New Primary Mission Objective:  Retrieve the Mobile Power Suit for Dr. Mobius
 
-		case 901: 
+		case 901:
 			{
 				Commands->Add_Objective(901, OBJECTIVE_TYPE_PRIMARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Primary_M09_01, NULL, IDS_Enc_Obj_Primary_M09_01);
-				
+
 				object = Commands->Find_Object(2002239);
 				if(object)
 				{
@@ -799,7 +799,7 @@ class M09_Objective_Controller : public ScriptImpClass // Object Controller id: 
 			}
 			break;
 		// New Primary Mission Objective: Escort Dr. Mobius to the Surface
-		case 902: 
+		case 902:
 			{
 				Commands->Add_Objective(902, OBJECTIVE_TYPE_PRIMARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Primary_M09_02, NULL, IDS_Enc_Obj_Primary_M09_02);
 
@@ -812,7 +812,7 @@ class M09_Objective_Controller : public ScriptImpClass // Object Controller id: 
 			}
 			break;
 		// New Primary Mission Objective: Escort Dr. Mobius to the Rendezvous Point
-		case 903: 
+		case 903:
 			{
 				Commands->Add_Objective(903, OBJECTIVE_TYPE_PRIMARY, OBJECTIVE_STATUS_PENDING, IDS_Enc_ObjTitle_Primary_M09_03, NULL, IDS_Enc_Obj_Primary_M09_03);
 
@@ -825,19 +825,19 @@ class M09_Objective_Controller : public ScriptImpClass // Object Controller id: 
 			}
 			break;
 		// New Hidden Mission Objective: Eliminate the NOD Resistance at Checkpoint A
-		
-		case 904: 
+
+		case 904:
 			{
 				Commands->Add_Objective(904, OBJECTIVE_TYPE_TERTIARY, OBJECTIVE_STATUS_HIDDEN, IDS_Enc_ObjTitle_Hidden_M09_01, NULL, IDS_Enc_Obj_Hidden_M09_04);			}
 			break;/*
 		// New Hidden Mission Objective: Comandeer the NOD Stealth Tank.
-		case 905: 
+		case 905:
 			{
 				Commands->Add_Objective(905, OBJECTIVE_TYPE_TERTIARY, OBJECTIVE_STATUS_HIDDEN, IDS_M09_T02, NULL, 0);
 			}
 			break;
 		// New Hidden Mission Objective: Comandeer the NOD Stealth Tank.
-		case 906: 
+		case 906:
 			{
 				Commands->Add_Objective(906, OBJECTIVE_TYPE_PRIMARY, OBJECTIVE_STATUS_PENDING, IDS_M09_P05, NULL, 0);
 			}
@@ -916,7 +916,7 @@ class M09_Objective_Controller : public ScriptImpClass // Object Controller id: 
 
 		switch (param)
 		{
-			case 1: 
+			case 1:
 				{
 					//Commands->Clear_Radar_Marker (type);
 					Commands->Set_Objective_Status(type, OBJECTIVE_STATUS_ACCOMPLISHED);
@@ -928,20 +928,20 @@ class M09_Objective_Controller : public ScriptImpClass // Object Controller id: 
 					Commands->Set_Objective_Status(type, OBJECTIVE_STATUS_FAILED);
 				}
 				break;
-			case 3: 
+			case 3:
 					Add_An_Objective(type);
 				break;
-			case 4: 
+			case 4:
 					Commands->Set_Objective_Status(type, OBJECTIVE_STATUS_PENDING);
 				break;
-			case 5: 
+			case 5:
 					Commands->Set_Objective_Status(type, OBJECTIVE_STATUS_HIDDEN);
 				break;
 		}
-		
+
 		if(type == 666 && param == 666)
 		{
-			
+
 			Commands->Start_Timer (obj, this, 0.10f, M09_DEAD_HAVOC);
 		}
 
@@ -951,7 +951,7 @@ class M09_Objective_Controller : public ScriptImpClass // Object Controller id: 
 		}
 	}
 
-		
+
 	void Timer_Expired(GameObject * obj, int timer_id )
 	{
 		if (timer_id == 333)
@@ -966,7 +966,7 @@ class M09_Objective_Controller : public ScriptImpClass // Object Controller id: 
 		if (timer_id == 40)
 		{
 			Commands->Mission_Complete(false);
-		}	
+		}
 	}
 };
 ScriptRegistrant<M09_Objective_Controller> reg_M09_Objective_Controller("M09_Objective_Controller", "");
@@ -994,7 +994,7 @@ class M09_Mobius_Initial_Conversation : public ScriptImpClass
         if (timer_id == 20)
 		{
             if (!Campaign::HasPlayers()) { Commands->Start_Timer(obj, this, 1.0f, 20); return; }
-            Commands->Start_Timer(obj, this, 60.0f, 21);	
+            Commands->Start_Timer(obj, this, 60.0f, 21);
 			const char *conv_name = ("IDS_M09_D07");
 			int conv_id = Commands->Create_Conversation (conv_name, 99, 200, false);
 			Commands->Join_Conversation(obj, conv_id, false, false, true);
@@ -1008,12 +1008,12 @@ class M09_Mobius_Initial_Conversation : public ScriptImpClass
 	{
 		Commands->Set_Health (obj, max_health);
 	}*/
-	
+
 	void Killed(GameObject * obj, GameObject *killer )
 	{
-		Commands->Send_Custom_Event (obj, Commands->Find_Object(2000071), MOBIUS_KILLED, 0, 0.0f);		
+		Commands->Send_Custom_Event (obj, Commands->Find_Object(2000071), MOBIUS_KILLED, 0, 0.0f);
 	}
-	
+
 	void Action_Complete(GameObject * obj, int action_id, ActionCompleteReason reason)
 	{
 		if(action_id == 900 && (reason == ACTION_COMPLETE_CONVERSATION_ENDED || reason == ACTION_COMPLETE_CONVERSATION_INTERRUPTED))
@@ -1033,13 +1033,13 @@ class M09_Mobius_Initial_Conversation : public ScriptImpClass
 			params.Set_Basic( this, 99, 101 );
 			params.Set_Movement( Vector3(0,0,0), WALK, 0.5f);
 			params.WaypathID = 2000275;
-			
+
 			Commands->Action_Goto (obj, params);
 		}
 
 		if (action_id == 101)
 		{
-			
+
 			/*ActionParamsStruct params;
 			params.Set_Basic( this, 99, 150 );
 			params.Set_Face_Location( Commands->Get_Position ((Commands->Get_A_Star(Commands->Get_Position(Owner())))), 10.0f);
