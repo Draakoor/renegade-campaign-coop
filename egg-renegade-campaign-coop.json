@@ -16,7 +16,7 @@
   "startup": "python3 -u /opt/renegade-coop/runtime.py",
   "config": {
     "files": "{}",
-    "startup": "{\"done\": \"Level M00_Tutorial.mix Loaded OK\"}",
+    "startup": "{\"done\": \"Loaded OK\"}",
     "logs": "{}",
     "stop": "quit"
   },
@@ -40,7 +40,7 @@
     },
     {
       "name": "Release mode",
-      "description": "Development stays private until all campaign acceptance tests pass.",
+      "description": "Default is private. Use tools/set_public.py on a stopped server for explicit public testing.",
       "env_variable": "RELEASE_MODE",
       "default_value": "development",
       "user_viewable": true,

@@ -18,7 +18,7 @@ egg = {
     'startup': 'python3 -u /opt/renegade-coop/runtime.py',
     'config': {
         'files': '{}',
-        'startup': json.dumps({'done': 'Level M00_Tutorial.mix Loaded OK'}),
+        'startup': json.dumps({'done': 'Loaded OK'}),
         'logs': '{}', 'stop': 'quit'
     },
     'scripts': {'installation': {
@@ -29,7 +29,7 @@ egg = {
         {'name': 'TT download URL', 'description': 'Public HTTP(S) address of this server download endpoint, including TCP port 35002.',
          'env_variable': 'TT_DOWNLOAD_URL', 'default_value': 'http://YOUR_PUBLIC_IP:35002/', 'user_viewable': True,
          'user_editable': True, 'rules': 'required|string|url', 'field_type': 'text'},
-        {'name': 'Release mode', 'description': 'Development stays private until all campaign acceptance tests pass.',
+        {'name': 'Release mode', 'description': 'Default is private. Use tools/set_public.py on a stopped server for explicit public testing.',
          'env_variable': 'RELEASE_MODE', 'default_value': 'development', 'user_viewable': True,
          'user_editable': False, 'rules': 'required|in:development', 'field_type': 'text'},
         {'name': 'Disable automatic image entrypoint updates', 'description': 'Runtime versions are pinned.',
