@@ -37,4 +37,4 @@ if __name__ == '__main__':
     print(json.dumps(data, indent=2))
     assert data['hostport'] == '35000', 'Wrong advertised game port'
     assert data['maxplayers'] == '8', 'Wrong player limit'
-    assert data['hostname'] == 'Wellisch | Renegade Coop', 'Wrong server name'
+    assert data['hostname'] == 'Novara | Renegade Coop', 'Wrong server name'
