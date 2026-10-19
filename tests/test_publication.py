@@ -64,6 +64,15 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(gamespy.heartbeat_packet(), b'\\heartbeat\\35001\\gamename\\ccrenegade\\final')
         self.assertLessEqual(gamespy.INTERVAL, 30)
 
+    def test_readiness_uses_container_interface_not_loopback(self):
+        with patch('gamespy.socket.socket') as factory:
+            sock = factory.return_value.__enter__.return_value
+            sock.getsockname.return_value = ('172.18.0.2', 45000)
+            sock.recv.return_value = b'\\hostname\\Test\\mapname\\M06.mix\\final'
+            self.assertTrue(gamespy.query_ready())
+            self.assertEqual(sock.connect.call_args.args, (('172.18.0.2', 35001),))
+            sock.send.assert_called_once_with(b'\\info\\')
+
     def test_no_advertisement_before_query_ready(self):
         from threading import Event
         stopped = Event()

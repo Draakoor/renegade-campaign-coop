@@ -43,7 +43,11 @@ def query_ready():
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
             probe.settimeout(1)
-            probe.connect(('127.0.0.1', 35001))
+            # DA binds the game's interface, not loopback. UDP connect selects
+            # the local routed address without sending data to this TEST-NET IP.
+            probe.connect(('192.0.2.1', 27900))
+            local_ip = probe.getsockname()[0]
+            probe.connect((local_ip, 35001))
             probe.send(b'\\info\\')
             packet = probe.recv(8192)
             return b'\\hostname\\' in packet and b'\\mapname\\' in packet
