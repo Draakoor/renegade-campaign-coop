@@ -21,4 +21,6 @@ runtime.lock
 *.dat
 *.mix
 *.LVL
+*.lvl
+*.wcm
 Testserver-starten.cmd

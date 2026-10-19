@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 // MPF_Player compatibility derived from MPF Games CoopBeta 4.2.4 (2012-2016).
 // Built against the unmodified Dragonade 1.11.1 / TT 4.8.4 headers.
 #include <functional>
@@ -9,6 +9,55 @@
 #include "da_game.h"
 #include "da_settings.h"
 #include "SoldierGameObj.h"
+#include "GameObjManager.h"
+#include "SpawnerClass.h"
+#include "SpawnerDefClass.h"
+#include "mission_runtime.h"
+#include "mission_controllers.h"
+#include "mission_coop.h"
+
+static void DumpMissionObjects() {
+    FILE* out = fopen("mission-objects.tsv", "wb");
+    if (!out) return;
+    fputs("id\tpreset\tx\ty\tz\thealth\tteam\tscripts\n", out);
+    unsigned count = 0;
+    for (auto* node = GameObjManager::GameObjList.Head(); node; node = node->Next()) {
+        auto* obj = node->Data()->As_ScriptableGameObj();
+        if (!obj) continue;
+        const Vector3 p = Commands->Get_Position(obj);
+        fprintf(out, "%d\t%s\t%.3f\t%.3f\t%.3f\t%.1f\t%d\t", Commands->Get_ID(obj),
+                Commands->Get_Preset_Name(obj), p.X, p.Y, p.Z,
+                Commands->Get_Health(obj), Commands->Get_Player_Type(obj));
+        const auto& observers = obj->Get_Observers();
+        for (int i = 0; i < observers.Count(); ++i) {
+            fprintf(out, "%s%s", i ? ";" : "", observers[i]->Get_Name());
+        }
+        fputs("\n", out);
+        ++count;
+    }
+    fclose(out);
+    // TT 4.8.4 FDS: identical address to Dragonade engine_da.cpp SpawnerList.
+    // The installer pins and hashes the executable; never use for a client.
+    const auto& spawners = *reinterpret_cast<DynamicVectorClass<SpawnerClass*>*>(0x008564A8);
+    out = fopen("mission-spawners.tsv", "wb");
+    if (out) {
+        fputs("id\tpreset\tx\ty\tz\tprimary\tstartup\tenabled\tcount\tscripts\n", out);
+        for (int i = 0; i < spawners.Count(); ++i) {
+            const auto* s = spawners[i];
+            const auto* d = s->definition;
+            const Vector3 p = s->transform.Get_Translation();
+            fprintf(out, "%d\t%s\t%.3f\t%.3f\t%.3f\t%d\t%d\t%d\t%d\t", s->id,
+                    d->Get_Name(), p.X, p.Y, p.Z, d->IsPrimary, d->IsSoldierStartup, s->enabled, s->spawnCount);
+            for (int j = 0; j < s->scriptNames.Count(); ++j)
+                fprintf(out, "%s%s", j ? ";" : "", s->scriptNames[j].Peek_Buffer());
+            fputs("\n", out);
+        }
+        fclose(out);
+    }
+    Console_Output("[Campaign] Wrote %u mission objects to mission-objects.tsv.\n", count);
+    Console_Output("[Campaign] state mission=%d ready=%d checkpoint=%d keys=%u outcome=%d players=%u\n",Campaign::state.mission,Campaign::ready,Campaign::state.checkpoint,Campaign::state.keys,static_cast<int>(Campaign::state.outcome),static_cast<unsigned>(Campaign::Players().size()));
+    for (const auto& e : Campaign::state.objectives) Console_Output("[Campaign] state objective=%d status=%d\n",e.first,e.second.status);
+}
 
 // This mode deliberately does not call DALevelCleaner::Clean_Level(): the
 // campaign needs its single-player spawners, buildings and script observers.
@@ -37,7 +86,11 @@ Register_Game_Mode(WellischCampaign, "Campaign", "Renegade Campaign Coop", 0);
 class MPF_Player : public ScriptImpClass {
     void Created(GameObject* obj) override {
         const int team = DASettingsManager::Get_Int("ForceTeam", 1);
-        if (Get_Object_Type(obj) != team) Change_Team(obj, team);
+        if (Get_Object_Type(obj) != team) { Change_Team(obj, team); return; }
+        if (Campaign::state.active()) Commands->Start_Timer(obj,this,.25f,1);
+    }
+    void Timer_Expired(GameObject* obj,int) override {
+        if (!Campaign::PlacePlayer(obj)) Commands->Start_Timer(obj,this,1.0f,1);
     }
 };
 ScriptRegistrant<MPF_Player> playerRegistrant("MPF_Player", "");
@@ -63,6 +116,7 @@ public:
         if (log) { fputs(output, log); fclose(log); }
     }
     void Level_Loaded_Event() override {
+        Campaign::Loaded();
         const char* map = The_Game()->Get_Map_Name();
         FILE* state = fopen("active-map.tmp", "wb");
         if (state) { fputs(map, state); fclose(state);
@@ -72,7 +126,9 @@ public:
         // DA timers scale with gameplay time; the Tutorial pauses that clock.
         const DWORD now = GetTickCount();
         if (now - lastPoll < 250) return;
+        const float elapsed = lastPoll ? (now-lastPoll)/1000.0f : .25f;
         lastPoll = now;
+        Campaign::Tick((std::min)(elapsed,1.0f));
         FILE* in = fopen("console.in", "rb");
         if (!in) return;
         fseek(in, inputOffset, SEEK_SET);
@@ -84,17 +140,33 @@ public:
             inputOffset = ftell(in);
             *end = '\0';
             if (end > line && end[-1] == '\r') end[-1] = '\0';
-            Console_Input(line);
+            if (!_stricmp(line, "campaign_dump")) DumpMissionObjects();
+            else if (!_stricmp(line,"campaign_probe_spawners")) {
+                if (DASettingsManager::Get_Bool("CampaignDiagnostics",false) && Campaign::ready) {
+                    Campaign::RestoreActors();
+                    Campaign::TickSpawners(1.0f);
+                    Console_Output("[Campaign] DIAGNOSTIC spawner probe; no human playtest.\n");
+                } else Console_Output("[Campaign] Diagnostic spawner probe disabled.\n");
+            }
+            else if (!_stricmp(line,"campaign_test_mobius_death")) {
+                if (DASettingsManager::Get_Bool("CampaignDiagnostics",false) && Campaign::state.mission == 9) {
+                    if (auto* mobius = Commands->Find_Object(2000010)) Commands->Apply_Damage(mobius,1000000.0f,"Death",nullptr);
+                    Console_Output("[Campaign] DIAGNOSTIC Mobius death; no human playtest.\n");
+                }
+            }
+            else Console_Input(line);
         }
         fclose(in);
     }
 };
 static PanelConsole* panelConsole = 0;
 extern "C" __declspec(dllexport) void Plugin_Init() {
+    Campaign::Install();
     panelConsole = new PanelConsole;
     Console_Output("[Wellisch] da_campaign loaded (TT 4.8.4 / DA 1.11.1).\n");
 }
 extern "C" __declspec(dllexport) void Plugin_Shutdown() {
+    Campaign::Uninstall();
     delete panelConsole;
     panelConsole = 0;
 }

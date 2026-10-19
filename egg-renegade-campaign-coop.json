@@ -7,7 +7,7 @@
   "exported_at": "2026-10-19T00:00:00+00:00",
   "name": "Renegade Campaign Coop",
   "author": "admin@wellisch-itservice.de",
-  "description": "Development runtime for TT 4.8.4 / DA 1.11.1. Supply input/CoopBeta424.zip and input/server.dat, then set TT_DOWNLOAD_URL. First start assembles the private volume. M06/M07/M09 and campaign acceptance remain incomplete.",
+  "description": "TT 4.8.4 / DA 1.11.1 with M06/M07/M09 coop adaptations. Supply CoopBeta424.zip, server.dat and the original M06/M07/M09 .mix and .LVL files in input/. Set TT_DOWNLOAD_URL. First start assembles a private full-campaign test rotation; human playtests pending.",
   "features": [],
   "docker_images": {
     "Renegade Campaign Coop (development)": "ghcr.io/draakoor/renegade-campaign-coop:main"
@@ -22,7 +22,7 @@
   },
   "scripts": {
     "installation": {
-      "script": "#!/bin/sh\nset -eu\nmkdir -p /mnt/server/input\nprintf \"%s\\n\" \"Supply input/CoopBeta424.zip and input/server.dat, configure TT_DOWNLOAD_URL, then start. Existing data is preserved.\"\n",
+      "script": "#!/bin/sh\nset -eu\nmkdir -p /mnt/server/input\nprintf \"%s\\n\" \"Supply CoopBeta424.zip, server.dat and M06/M07/M09 .mix + .LVL in input/, configure TT_DOWNLOAD_URL, then start. Existing data is preserved.\"\n",
       "container": "ghcr.io/draakoor/renegade-campaign-coop:main",
       "entrypoint": "/bin/sh"
     }

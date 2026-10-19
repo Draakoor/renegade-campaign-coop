@@ -17,6 +17,11 @@ def check_inputs(root):
             raise RuntimeError(f'Missing {path}. Supply CoopBeta424.zip and the original FDS server.dat in input/; see README.')
         if sha(path) != lock[name]['sha256']:
             raise RuntimeError(f'{path.name}: input hash mismatch')
+    for name, hashes in lock['campaign_missions'].items():
+        for suffix in ('mix', 'LVL'):
+            path = root / 'input' / (name + '.' + suffix)
+            if not path.is_file() or sha(path) != hashes[suffix.lower() + '_sha256']:
+                raise RuntimeError(f'{path.name}: supply the matching original map/LVL source in input/; see sources.lock.json')
     url = os.environ.get('TT_DOWNLOAD_URL', '')
     parsed = urlsplit(url)
     if parsed.scheme not in ('http', 'https') or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
@@ -44,7 +49,7 @@ def stage_volume(root):
     # A failed build remains isolated; the final release appears only when complete.
     with tempfile.TemporaryDirectory(prefix='assemble-', dir=work) as tmp:
         out = Path(tmp) / 'bundle'
-        prepare(work, None, out, fds_data=inputs['fds_data'], download_url=url, archive=False)
+        prepare(work, None, out, fds_data=inputs['fds_data'], mission_input=root / 'input', download_url=url, archive=False)
         for name in ('defaults', 'source'):
             if not (root / name).exists():
                 shutil.copytree(out / name, root / name)
