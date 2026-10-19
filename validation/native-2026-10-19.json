@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-19",
+  "environment": "Windows x86 FDS, TT 4.8.4, Dragonade 1.11.1, isolated development server",
+  "human_clients": 0,
+  "mission_acceptance": "not_run",
+  "checks": {
+    "M06": {"load": "passed", "restored_original_npcs": 45, "required_actor_found": "Sydney (101010)"},
+    "M07": {"load": "passed", "restored_original_npcs": 41, "required_actors_found": "Hotwire, Patch, Deadeye, Gunner and Sydney (100658-100662)"},
+    "M09": {"load": "passed", "restored_original_npcs": 119, "required_actor_found": "Mobius (2000010)"},
+    "map_transition": "M06 to M07 to M09 passed using console gameover",
+    "map_reload": "M09 reloadlevel reset shared state",
+    "escort_death": "Diagnostic damage killed Mobius; failure hook returned outcome 2 and reloaded M09 after 8 seconds",
+    "state_tests": "150 success-order permutations plus failure latch, duplicate events, key revocation and reset passed",
+    "python_tests": "12 passed"
+  },
+  "pending": ["human join", "solo walkthroughs", "multiplayer respawn and late join", "simultaneous triggers", "player departure during sequences", "all campaign transitions", "eight-client load test"]
+}

@@ -20,5 +20,19 @@
     "source": "Original Renegade Free Dedicated Server server.dat, supplied by the operator",
     "sha256": "d8fbb2b7de7eb47faa24a33f99f2f4e308e70532502b5f4d74cdf7bc8395a229"
   },
-  "ea_source_commit": "3e00c3a1b97381bb28be89a35b856375e0629a08"
+  "ea_source_commit": "3e00c3a1b97381bb28be89a35b856375e0629a08",
+  "campaign_missions": {
+    "M06": {
+      "mix_sha256": "cf98d879ac8cf23e60589407b61eb4c2a43c238c979b54485a25938f7679573a",
+      "lvl_sha256": "746d5582742d2e64a5de5fde37aae18872c3a418807304154905fadbf9faedda"
+    },
+    "M07": {
+      "mix_sha256": "cad7b2b2e0bd149fb7dd5f414340572bd2db8c11c4e66746abcf776089692840",
+      "lvl_sha256": "82bce531356e66251e345b556b33fedbb3f50f45f0b3e0bcbdd1d7fdcc62cedb"
+    },
+    "M09": {
+      "mix_sha256": "059fc7de0c06c31e2aa69e1ab7768de81f3377e18c971ba8f98f41e15f1705c1",
+      "lvl_sha256": "8c15f168a669f621e1c5a258eb2667aabc735b18dea156e52c0555cfb01d9baf"
+    }
+  }
 }

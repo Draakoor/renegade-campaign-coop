@@ -25,6 +25,10 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m unittest discover -s tests -v
+      - name: Test shared mission progression
+        run: |
+          g++ -std=c++14 -Wall -Wextra -pedantic tests/mission_state.cpp -o mission-tests
+          ./mission-tests
       - name: Verify generated Pterodactyl egg
         run: |
           python tools/make_egg.py
@@ -88,7 +92,7 @@ jobs:
         with:
           images: ${{ steps.image.outputs.name }}
           labels: |
-            org.opencontainers.image.licenses=GPL-2.0-or-later
+            org.opencontainers.image.licenses=GPL-2.0-or-later AND GPL-3.0-or-later
           flavor: latest=false
           tags: |
             type=ref,event=branch

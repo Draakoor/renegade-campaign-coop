@@ -1,8 +1,4 @@
-"""Assemble a private validation build from pinned upstream/local inputs.
-
-The three original missions are copied to a separate authoring workspace,
-never silently substituted for the missing coop adaptations.
-"""
+"""Assemble the private campaign, including the M06/M07/M09 runtime adaptations."""
 import argparse
 import hashlib
 import json
@@ -11,12 +7,15 @@ import shutil
 import zipfile
 if __package__:
     from .fds_port import set_lan_port
+    from .mission_sources import compile_source
 else:
     from fds_port import set_lan_port
+    from mission_sources import compile_source
 
 PROJECT = Path(__file__).resolve().parents[1]
 MAPS = ['M00_Tutorial'] + [f'M{i:02d}' for i in range(1, 12)]
 EXISTING = [m for m in MAPS if m not in ('M06', 'M07', 'M09')]
+ADAPTED = ('M06', 'M07', 'M09')
 
 
 def digest(path):
@@ -32,12 +31,19 @@ def copy_tree(source, dest, exclude=()):
             shutil.copyfile(src, dst)
 
 
-def prepare(work, game, output, *, fds_data=None, download_url='http://127.0.0.1:35002/', archive=True):
+def prepare(work, game, output, *, fds_data=None, mission_input=None, download_url='http://127.0.0.1:35002/', archive=True):
     work, output = work.resolve(), output.resolve()
     game = game.resolve() if game else None
     if output.exists():
         raise RuntimeError('Use a new output directory; existing builds are retained.')
     lock = json.loads((PROJECT / 'sources.lock.json').read_text())
+    mission_files = {}
+    for name in ADAPTED:
+        for suffix, folder in [('mix', 'Data'), ('LVL', 'Modding Support/Single Player Level Source Files')]:
+            src = Path(mission_input) / (name + '.' + suffix) if mission_input else game / folder / (name + '.' + suffix)
+            if digest(src) != lock['campaign_missions'][name][suffix.lower() + '_sha256']:
+                raise RuntimeError(f'{name}.{suffix}: original mission input hash mismatch')
+            mission_files[name, suffix] = src
     for key, filename in [('tt', 'server-4.8.4.zip'), ('dragonade', 'dragonade-1.11.1.zip')]:
         if digest(work / 'downloads' / filename) != lock[key]['sha256']:
             raise RuntimeError(f'{key} input hash mismatch')
@@ -54,6 +60,16 @@ def prepare(work, game, output, *, fds_data=None, download_url='http://127.0.0.1
     for name in EXISTING + ['CoopContent']:
         shutil.copyfile(legacy / 'data' / 'original mix files' / (name + '.mix'), server / 'data' / (name + '.mix'))
     copy_tree(work / 'tt' / 'serverfiles', server, exclude=('.ini', '.cfg'))
+    # TT includes its own M09.mix. Install the verified campaign input after TT,
+    # so the adaptation, LVL placements and original map are a matching set.
+    for name in ADAPTED:
+        shutil.copyfile(mission_files[name, 'mix'], server / 'data' / (name + '.mix'))
+        for folder in ('original', 'working'):
+            target = work / 'missions' / folder / (name + '.LVL')
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if not target.exists():
+                shutil.copyfile(mission_files[name, 'LVL'], target)
+        compile_source(mission_files[name, 'LVL'], server / 'data' / (name + '.wcm'))
     executable = server / 'server.exe'
     executable.write_bytes(set_lan_port(executable.read_bytes()))
     shutil.copyfile(work / 'tt' / 'serverfiles' / 'data' / 'anticheat.ini', server / 'data' / 'anticheat.ini')
@@ -77,7 +93,9 @@ def prepare(work, game, output, *, fds_data=None, download_url='http://127.0.0.1
     definitions = 'gameDefinitions:\n{\n'
     for name in EXISTING:
         definitions += f'  {name}: {{ mapName="{name}"; packages=["{name}","CoopContent"]; serverPresetsFile="objects.mpf"; }};\n'
-    definitions += '};\nrotation: ["M00_Tutorial"];\n'
+    for name in ADAPTED:
+        definitions += f'  {name}: {{ mapName="{name}"; packages=["CoopContent"]; serverPresetsFile="objects.mpf"; }};\n'
+    definitions += '};\nrotation: ' + json.dumps(MAPS) + ';\n'
     definitions += 'downloader: { repositoryUrl=' + json.dumps(download_url.rstrip('/') + '/') + '; };\n'
     (defaults / 'tt.cfg').write_text(definitions, encoding='utf-8')
     for name in ('bootstrap.py', 'runtime.py', 'volume_lock.py', 'sources.lock.json'):
@@ -86,10 +104,12 @@ def prepare(work, game, output, *, fds_data=None, download_url='http://127.0.0.1
     copy_tree(PROJECT / 'plugin', output / 'source' / 'plugin')
     copy_tree(PROJECT / 'tools', output / 'source' / 'tools', exclude=('.pyc',))
     shutil.copyfile(PROJECT / 'COPYING', output / 'source' / 'COPYING')
+    shutil.copyfile(PROJECT / 'COPYING.plugin', output / 'source' / 'COPYING.plugin')
+    shutil.copyfile(PROJECT / 'THIRD_PARTY.txt', output / 'source' / 'THIRD_PARTY.txt')
     validation = {'release': 'development', 'desired_rotation': MAPS, 'missions': {},
                   'network': {}, 'load_test': {'result': 'not_run', 'clients': 0}}
     for name in MAPS:
-        validation['missions'][name] = {'implementation': 'legacy_unverified' if name in EXISTING else 'not_implemented',
+        validation['missions'][name] = {'implementation': 'legacy_unverified' if name in EXISTING else 'runtime_adaptation_unverified',
                                         'clients': 0, 'evidence': []}
     (output / 'validation.json').write_text(json.dumps(validation, indent=2), encoding='utf-8')
     files = {p.relative_to(server).as_posix(): digest(p) for p in sorted(server.rglob('*')) if p.is_file()}

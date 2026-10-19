@@ -7,6 +7,7 @@
 !volume_lock.py
 !sources.lock.json
 !COPYING
+!COPYING.plugin
 !THIRD_PARTY.txt
 !defaults/
 !defaults/**

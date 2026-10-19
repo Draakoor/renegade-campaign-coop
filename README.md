@@ -4,7 +4,7 @@
 
 Pterodactyl-/Docker-Entwicklungsumgebung für C&C Renegade: **TT 4.8.4, Dragonade 1.11.1, Wine, 8 Spieler**.
 
-**Die vollständige Kampagne ist noch nicht fertig. M06, M07 und M09 sind nicht als Coop-Missionen implementiert.** Die vorhandenen CoopBeta-Karten sind noch nicht vollständig geprüft. Die aktive Testrotation enthält nur das Tutorial. Der Server startet passwortgeschützt und ohne öffentliche GameSpy-Heartbeats. Das öffentliche Repository und Image stellen den Entwicklungsstand bereit; sie bedeuten keine Freigabe der Kampagne.
+**M06, M07 und M09 enthalten jetzt eigene Coop-Anpassungen; vollständige Spieltests stehen noch aus.** Neu aufgebaute Volumes enthalten die private Testrotation Tutorial → M01–M11. Bestehende Volumes behalten ihre Einstellungen und benötigen das unten beschriebene Update. Der Server startet passwortgeschützt und ohne öffentliche GameSpy-Heartbeats. Das öffentliche Repository und Image stellen den Entwicklungsstand bereit; sie bedeuten keine Freigabe der Kampagne.
 
 ## Image und Workflow
 
@@ -12,7 +12,7 @@ Pterodactyl-/Docker-Entwicklungsumgebung für C&C Renegade: **TT 4.8.4, Dragonad
 ghcr.io/draakoor/renegade-campaign-coop:main
 ```
 
-Der Workflow testet den Python-Code, kompiliert das Win32-Plugin aus den Quellen auf einem Windows-Runner, baut das Linux-amd64-Image und prüft dessen Laufzeit und Verhalten ohne Spieldaten. Erst danach veröffentlicht er es auf GHCR. Pushes auf `main`, Tags `v*` und manuelle Starts veröffentlichen; Pull Requests prüfen ohne Veröffentlichung. Tags sind `main`, `sha-<vollständiger Commit>` und gegebenenfalls der Versions-Tag. Es gibt bewusst keinen `latest`-Tag.
+Der Workflow testet den Python-Code und 150 Reihenfolgen gemeinsamer Missionsziele, kompiliert das Win32-Plugin aus den Quellen auf einem Windows-Runner, baut das Linux-amd64-Image und prüft dessen Laufzeit und Verhalten ohne Spieldaten. Erst danach veröffentlicht er es auf GHCR. Pushes auf `main`, Tags `v*` und manuelle Starts veröffentlichen; Pull Requests prüfen ohne Veröffentlichung. Tags sind `main`, `sha-<vollständiger Commit>` und gegebenenfalls der Versions-Tag. Es gibt bewusst keinen `latest`-Tag.
 
 GitHub Actions nutzt `GITHUB_TOKEN` mit `packages: write`; zusätzliche Registry-Secrets sind nicht erforderlich. Actions sind auf Commit-SHAs und das Wine-Basisimage auf einen Digest festgelegt. Der fertige Image-Digest steht in der Workflow-Zusammenfassung. Für einen festgeschriebenen Betrieb diesen Digest statt `:main` verwenden.
 
@@ -22,7 +22,7 @@ Das Image enthält Laufzeit, Installer, Plugin und Pluginquellen. **Es enthält 
 
 1. Repository klonen und `volume/input/` anlegen. Unter Linux benötigt der Benutzer `container` (UID/GID 1000) Schreibzugriff auf `volume/`.
 2. Die unveränderte [CoopBeta424.zip](https://multiplayerforums.com/files/file/9-coopbeta/) nach `volume/input/CoopBeta424.zip` kopieren.
-3. Die originale `server.dat` aus der eigenen Renegade-FDS-Installation nach `volume/input/server.dat` kopieren. Die erwarteten Prüfsummen stehen in `sources.lock.json`.
+3. Die originale `server.dat` aus der eigenen Renegade-FDS-Installation nach `volume/input/server.dat` kopieren. Zusätzlich `M06.mix`, `M07.mix`, `M09.mix` aus `Data/` und `M06.LVL`, `M07.LVL`, `M09.LVL` aus `Modding Support/Single Player Level Source Files/` der EA-Installation in `volume/input/` ablegen. Alle acht Eingaben werden gegen `sources.lock.json` geprüft.
 4. `.env.example` nach `.env` kopieren und `TT_DOWNLOAD_URL=http://DEINE_OEFFENTLICHE_IP:35002/` setzen.
 5. Starten:
 
@@ -51,7 +51,7 @@ Ein Spieler ist durch `NoGameplayPending=true` zugelassen. Ein Client mit TT ben
 
 ## Pterodactyl
 
-`egg-renegade-campaign-coop.json` in ein Nest importieren. Das Egg verwendet das GHCR-Image und startet `/opt/renegade-coop/runtime.py`. Die Allocation 35000 plus 35001/35002 zuweisen; `TT_DOWNLOAD_URL` auf die öffentliche Adresse setzen. Vorgeschlagene Ressourcen: 2048 MiB RAM, 200 % CPU, 10240 MiB Disk. `input/CoopBeta424.zip` und `input/server.dat` über den Dateimanager bereitstellen, dann starten.
+`egg-renegade-campaign-coop.json` in ein Nest importieren. Das Egg verwendet das GHCR-Image und startet `/opt/renegade-coop/runtime.py`. Die Allocation 35000 plus 35001/35002 zuweisen; `TT_DOWNLOAD_URL` auf die öffentliche Adresse setzen. Vorgeschlagene Ressourcen: 2048 MiB RAM, 200 % CPU, 10240 MiB Disk. Die acht oben aufgeführten Eingaben über den Dateimanager unter `input/` bereitstellen, dann starten.
 
 Die Konsole wird über eine Datei im Volume an das Plugin übergeben. `daver` zeigt die Version, `quit` beendet geordnet. Der Panel-Stop sendet `quit`. Bei Docker sendet `docker compose stop` SIGTERM. Der Supervisor beendet nach einem Timeout ausschließlich seinen Wine-Prefix.
 
@@ -71,14 +71,26 @@ Der Installer prüft alle Release-Dateien, sichert ersetzte Binärdateien/Assets
 
 - Im bisherigen privaten Hostingtest: Tutorialstart unter Windows und Wine, Panel-Konsole, geordnetes Stoppen/erneuter Start, externe GameSpy-Abfrage und HTTP-Paketdownload erfolgreich.
 - CoopBeta-Dateien vorhanden: Tutorial, M01–M05, M08, M10, M11. Noch keine vollständigen Missionsdurchläufe nachgewiesen.
-- M06/M07/M09: Originalquellen nur lokal als Original und Arbeitskopie vorbereitet. Keine fertige Coop-Portierung enthalten. Eine von TT mitgelieferte originale `M09.mix` ersetzt diese Arbeit nicht.
-- Das Plugin erzwingt GDI und bewahrt Kampagnenobjekte. Gemeinsame Checkpoints, Ziele, Begleitfiguren und Mehrspieler-Sequenzen der fehlenden Missionen sind noch zu entwickeln.
+- M06: gemeinsames Hacken des War-Room-Rechners, Wissenschaftler-Rettung, Sydney-Eskorte und Mendoza-Ziel. Der Rechner-Auslöser ist einmalig und übersteht einen unterbrochenen Dialog.
+- M07: gemeinsame Dead6-/Sydney-, SAM-, SSM- und Nuklearziele. Einzelne Spielertode lösen keinen Missionsfehlschlag aus; der Tod erforderlicher Begleitfiguren schon.
+- M09: Mobius-Eskorte mit Schutzanzug, Oberfläche und Rendezvous. Die Schutzanzug-Szene wird ohne Einzelspieler-Kamera/Teleport ausgeführt. Evakuierung verlangt Mobius und mindestens einen lebenden Spieler im Zielgebiet.
+- Alle drei: gemeinsamer Ziel-/Schlüsselstand, sichere Respawns am Missionsstart bzw. erreichten Kontrollpunkt, Synchronisierung späterer Beitritte, GDI, kein Friendly Fire/Teamwechsel/Zeitlimit. Erfolg wechselt zur nächsten Karte, Fehlschlag lädt dieselbe Karte neu. Ein Server-/Kartenneustart verwirft den Kontrollpunkt.
+- Die Original-LVL-Dateien liefern Positionen und Skripte fehlender NPCs. Der Installer erzeugt daraus private `.wcm`-Tabellen; das Plugin stellt die vom FDS ausgelassenen platzierten Soldaten wieder her. Original-Leveldateien bleiben unverändert. Die drei Karten nutzen ihre Original-Spielassets plus das bestehende CoopContent-Paket.
 - Der Legacy-`!goto`-Befehl ist noch nicht portiert.
 - Die DA-Abfrage meldet durch einen Upstream-Factory-Test derzeit `TC=1`, obwohl Konfiguration und Plugin Teamwechsel sperren. Mit echten Clients prüfen und die Anzeige korrigieren.
 - Öffentliche Master-Heartbeats, Listensichtbarkeit und Listenbeitritt fehlen. Der DA-Heartbeat-Timer muss vor Freigabe an das [aktuelle TT-Protokoll](https://tiberiantechnologies.org/Docs/?page=GameSpy%20Protocol%20and%20New%20Broadcaster) angepasst werden.
-- Zwei echte Clients pro Mission und ein Lasttest mit acht Clients fehlen. Tests mit null Spielern oder der erfolgreiche CI-Build ersetzen diese Abnahme nicht.
+- Lokal geprüft: Laden aller drei Karten, ursprüngliche Startpunkte, Wiederherstellung von 45/41/119 NPCs (M06/M07/M09), Dead6/Mobius/Sydney inklusive Skripten, Kartenwechsel, Neuladen und Missionsneustart nach Mobius-Tod. [Technischer Prüfbericht](validation/native-2026-10-19.json). Diese Diagnosen hatten **null echte Clients**.
+- Der Betreiber kann zunächst allein testen. Ein vollständiger Solo-Durchlauf aller Missionen, echte Mehrspieler-Beitritte, Sequenzen und der Lasttest mit acht Clients sind noch offen. Die Veröffentlichung des Codes ist keine öffentliche Spielfreigabe.
 - `ResumeRotation=true` ist gesetzt; bisher nur im Tutorial geprüft. Kein persistenter Checkpoint-Spielstand.
 - `RELEASE_MODE=development` bleibt gesetzt. Das Ändern der Variable allein schaltet keinen öffentlichen Betrieb frei.
+
+## Missionen lokal prüfen und bestehende Volumes aktualisieren
+
+Die neuen Dateien sind `da_campaign.dll`, `data/M06.mix`, `data/M07.mix`, `data/M09.mix` und die zugehörigen `.wcm`-Tabellen. Der Installer baut diese aus den geprüften Eingaben. Für ein bestehendes Volume zuerst stoppen und sichern, einen neuen Release-Baum mit `tools/prepare_bundle.py` erzeugen und mit `bootstrap.py` installieren. `server/tt.cfg` wird absichtlich nicht überschrieben: die neuen `gameDefinitions` und die gewünschte Rotation aus `defaults/tt.cfg` nach Sicherung gezielt übernehmen. Für M06/M07/M09 werden die originalen Karten auf dem TT-Client benötigt; neue Modelle/Texturen werden nicht verteilt.
+
+`campaign_dump` in der Panel-Konsole schreibt Missionsobjekte/Spawner und den gemeinsamen Zustand ins lokale Protokoll. Ausschließlich auf einem isolierten Testserver lässt `CampaignDiagnostics=1` in `[General]` der `da.ini` die Befehle `campaign_probe_spawners` und `campaign_test_mobius_death` zu. Der erste erzeugt NPCs ohne Spieler; der zweite prüft Mobius-Tod und Kartenneustart. Diese künstlichen Ereignisse sind keine Missionsabnahme. Im normalen Betrieb bleibt die Option aus.
+
+Die Portierung verwendet die Spawner-Schnittstelle der festgelegten FDS-Version. Der Installer lehnt andere Executable-Hashes ab. Ein Upgrade von TT/Dragonade benötigt eine erneute Prüfung der Schnittstellen.
 
 ## Lokal bauen
 
@@ -95,4 +107,4 @@ Die Importbibliotheken entstehen aus den exakten Release-DLL-Exports. Der Instal
 
 ## Quellen und Lizenz
 
-Eigener Quellcode und MPF-Kompatibilitätscode: GPL-2.0-or-later, siehe `COPYING` und `THIRD_PARTY.txt`. Die Lizenz erteilt keine zusätzlichen Rechte an den ursprünglichen Spielassets. Quellen: [TT](https://tiberiantechnologies.org/downloads), [Dragonade](https://github.com/TheUnstoppable/Dragonade), [CoopBeta](https://multiplayerforums.com/files/file/9-coopbeta/), [EA-Renegade-Quellcode](https://github.com/electronicarts/CnC_Renegade). Versionen und Prüfsummen sind in `sources.lock.json` dokumentiert.
+Hosting-/Installer-Code: GPL-2.0-or-later (`COPYING`). Das kombinierte Missionsplugin mit den angepassten EA-Controllern: GPL-3.0-or-later (`COPYING.plugin` einschließlich EA-Zusatzbedingungen). Siehe `THIRD_PARTY.txt`. Die Lizenz erteilt keine zusätzlichen Rechte an den ursprünglichen Spielassets. Quellen: [TT](https://tiberiantechnologies.org/downloads), [Dragonade](https://github.com/TheUnstoppable/Dragonade), [CoopBeta](https://multiplayerforums.com/files/file/9-coopbeta/), [EA-Renegade-Quellcode](https://github.com/electronicarts/CnC_Renegade). Versionen und Prüfsummen sind in `sources.lock.json` dokumentiert.

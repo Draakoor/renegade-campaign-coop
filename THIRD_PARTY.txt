@@ -1,4 +1,13 @@
-The source in this repository is provided under GPL-2.0-or-later (COPYING).
+Hosting/installer code is provided under GPL-2.0-or-later (COPYING).
+The combined mission plugin is GPL-3.0-or-later (COPYING.plugin).
+mission_controllers.h adapts Electronic Arts' Mission06.cpp, Mission07.cpp
+and Mission09.cpp, Copyright 2025 Electronic Arts Inc., from revision
+3e00c3a1b97381bb28be89a35b856375e0629a08:
+https://github.com/electronicarts/CnC_Renegade
+COPYING.plugin preserves EA's published GPLv3 licence and additional terms.
+The mission parser follows Tools/LevelEdit/Node.cpp, ObjectNode.cpp and
+EditScript.cpp from that source revision. It contains no level assets.
+
 MPF_Player compatibility is derived from CoopBeta 4.2.4, Copyright 2012-2016
 MPF Games. Its original exemption permits runtime dynamic linking with closed
 source modules not covered by the licence. Only the covered modules require

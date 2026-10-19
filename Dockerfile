@@ -3,10 +3,10 @@ FROM ghcr.io/ptero-eggs/yolks@sha256:db48c30fc50104a43d951200174d33e2b9200f80b03
 ARG SOURCE_REPOSITORY=https://github.com/Draakoor/renegade-campaign-coop
 ARG VCS_REF=unknown
 LABEL org.opencontainers.image.title="Renegade Campaign Coop development runtime" \
-      org.opencontainers.image.description="Wine runtime, campaign plugin and asset installer. M06/M07/M09 and campaign acceptance remain incomplete." \
+      org.opencontainers.image.description="Wine runtime with M06/M07/M09 coop adaptations. Human campaign playtests pending." \
       org.opencontainers.image.source=$SOURCE_REPOSITORY \
       org.opencontainers.image.revision=$VCS_REF \
-      org.opencontainers.image.licenses="GPL-2.0-or-later"
+      org.opencontainers.image.licenses="GPL-2.0-or-later AND GPL-3.0-or-later"
 
 USER root
 RUN groupadd --gid 1000 container \
@@ -14,7 +14,7 @@ RUN groupadd --gid 1000 container \
     && mkdir -p /home/container \
     && chown container:container /home/container
 WORKDIR /opt/renegade-coop
-COPY bootstrap.py runtime.py volume_lock.py sources.lock.json COPYING THIRD_PARTY.txt ./
+COPY bootstrap.py runtime.py volume_lock.py sources.lock.json COPYING COPYING.plugin THIRD_PARTY.txt ./
 COPY defaults/ defaults/
 COPY tools/*.py tools/
 COPY plugin/ plugin/
