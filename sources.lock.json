@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "wine_image": "ghcr.io/ptero-eggs/yolks@sha256:db48c30fc50104a43d951200174d33e2b9200f80b03b3ded9c106586450dbcf8",
+  "tt": {
+    "version": "4.8.4",
+    "url": "https://tiberiantechnologies.org/files/server-4.8.4.zip",
+    "sha256": "375b6bd8c58019d53cddf0633ad0b9d7386c0180fb8028f67777d0f0646b38f0"
+  },
+  "dragonade": {
+    "version": "1.11.1",
+    "url": "https://github.com/TheUnstoppable/Dragonade/releases/download/da1.11.1/DA1.11.1_Scripts_4.8.4.zip",
+    "sha256": "1c351719ce781ae37030003230c5bcd779120fcf5f9c26a57e6ff40285756c08"
+  },
+  "coopbeta": {
+    "version": "4.2.4",
+    "source": "https://multiplayerforums.com/files/file/9-coopbeta/",
+    "sha256": "b7834d7ca307499bc5d66571d49deeda1bd3f25ba872a086150a23eb0f10da46"
+  },
+  "fds_data": {
+    "source": "Original Renegade Free Dedicated Server server.dat, supplied by the operator",
+    "sha256": "d8fbb2b7de7eb47faa24a33f99f2f4e308e70532502b5f4d74cdf7bc8395a229"
+  },
+  "ea_source_commit": "3e00c3a1b97381bb28be89a35b856375e0629a08"
+}

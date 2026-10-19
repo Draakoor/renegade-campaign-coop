@@ -1,0 +1,21 @@
+The source in this repository is provided under GPL-2.0-or-later (COPYING).
+MPF_Player compatibility is derived from CoopBeta 4.2.4, Copyright 2012-2016
+MPF Games. Its original exemption permits runtime dynamic linking with closed
+source modules not covered by the licence. Only the covered modules require
+source release. Plugin sources and build instructions accompany this image.
+
+Dragonade 1.11.1 / TT 4.8.4 headers and DLL exports are used by the build.
+The exact sources and binary downloads are linked in sources.lock.json.
+https://github.com/TheUnstoppable/Dragonade
+https://tiberiantechnologies.org/downloads
+https://multiplayerforums.com/files/file/9-coopbeta/
+
+The Wine base image contains third-party packages with their own licences.
+https://github.com/ptero-eggs/yolks
+https://www.winehq.org/
+This repository's licence does not relicense those packages or game content.
+
+Original Renegade assets, FDS server.dat, level source files, downloaded map
+archives, live server settings, test passwords and Wine profiles are excluded
+from Git and the published image. Obtain the required game content separately
+from its original source and supply it in the private persistent volume.
