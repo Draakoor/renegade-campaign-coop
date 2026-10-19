@@ -15,6 +15,10 @@
 #include "mission_runtime.h"
 #include "mission_controllers.h"
 #include "mission_coop.h"
+#include "coop_services.h"
+#include "campaign_admin.h"
+static CoopServices::Events* coopServices = nullptr;
+static NovaraAdmin* campaignAdmin = nullptr;
 
 static void DumpMissionObjects() {
     FILE* out = fopen("mission-objects.tsv", "wb");
@@ -68,13 +72,13 @@ static void DumpMissionObjects() {
 
 // This mode deliberately does not call DALevelCleaner::Clean_Level(): the
 // campaign needs its single-player spawners, buildings and script observers.
-class WellischCampaign : public DAGameModeClass, public DAEventClass {
+class NovaraCampaign : public DAGameModeClass, public DAEventClass {
 public:
     void Init() override {
         Register_Event(DAEvent::TEAMCHANGEREQUEST, INT_MAX);
         Register_Event(DAEvent::PLAYERLOADED);
         Register_Object_Event(DAObjectEvent::CREATED, DAObjectEvent::PLAYER);
-        Console_Output("[Wellisch] Campaign mode active; mission scripts preserved.\n");
+        Console_Output("[Novara] Campaign mode active; mission scripts preserved.\n");
     }
 
     bool Team_Change_Request_Event(cPlayer*) override { return false; }
@@ -85,10 +89,10 @@ public:
     }
 
     void Player_Loaded_Event(cPlayer* player) override {
-        DA::Private_Host_Message(player, "Wellisch campaign development server. Mission validation is pending.");
+        DA::Private_Host_Message(player, "Novara campaign coop. Public test; mission validation is pending. Supply terminals: !buy.");
     }
 };
-Register_Game_Mode(WellischCampaign, "Campaign", "Renegade Campaign Coop", 0);
+Register_Game_Mode(NovaraCampaign, "Campaign", "Renegade Campaign Coop", 0);
 
 class MPF_Player : public ScriptImpClass {
     void Created(GameObject* obj) override {
@@ -153,6 +157,7 @@ public:
     }
     void Level_Loaded_Event() override {
         Campaign::Loaded();
+        CoopServices::Loaded();
         const char* map = The_Game()->Get_Map_Name();
         FILE* state = fopen("active-map.tmp", "wb");
         if (state) { fputs(map, state); fclose(state);
@@ -165,6 +170,7 @@ public:
         const float elapsed = lastPoll ? (now-lastPoll)/1000.0f : .25f;
         lastPoll = now;
         Campaign::Tick((std::min)(elapsed,1.0f));
+        CoopServices::Tick();
         FILE* in = fopen("console.in", "rb");
         if (!in) return;
         fseek(in, inputOffset, SEEK_SET);
@@ -177,6 +183,11 @@ public:
             *end = '\0';
             if (end > line && end[-1] == '\r') end[-1] = '\0';
             if (!_stricmp(line, "campaign_dump")) DumpMissionObjects();
+            else if (!_stricmp(line,"campaign_supplies")) CoopServices::Dump();
+            else if (!_stricmp(line,"campaign_test_supplies")) CoopServices::Probe();
+            else if (!_strnicmp(line,"campaign_admin ",15)) {
+                if (!campaignAdmin->Approve(line+15)) Console_Output("[Novara] Admin request not found or expired. Use !admin in-game first.\n");
+            }
             else if (!_stricmp(line,"campaign_test_player_armor")) TestPlayerArmor();
             else if (!_stricmp(line,"campaign_probe_spawners")) {
                 if (DASettingsManager::Get_Bool("CampaignDiagnostics",false) && Campaign::ready) {
@@ -199,11 +210,15 @@ public:
 static PanelConsole* panelConsole = 0;
 extern "C" __declspec(dllexport) void Plugin_Init() {
     Campaign::Install();
+    coopServices = new CoopServices::Events;
+    campaignAdmin = new NovaraAdmin;
     panelConsole = new PanelConsole;
-    Console_Output("[Wellisch] da_campaign loaded (TT 4.8.4 / DA 1.11.1).\n");
+    Console_Output("[Novara] da_campaign loaded (TT 4.8.4 / DA 1.11.1).\n");
 }
 extern "C" __declspec(dllexport) void Plugin_Shutdown() {
     Campaign::Uninstall();
+    delete campaignAdmin; campaignAdmin = nullptr;
+    delete coopServices; coopServices = nullptr;
     delete panelConsole;
     panelConsole = 0;
 }

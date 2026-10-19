@@ -19,6 +19,8 @@ static float facing = 0;
 static DWORD outcomeTime = 0;
 static std::string character;
 static std::map<int, uint32_t> observedKeys;
+static uint32_t revokedKeys = 0;
+static std::map<int, std::string> purchasedCharacters;
 static std::map<int, int> markers;
 static std::map<int, Vector3> destinations;
 static std::map<int,int> actorIds, actorOriginalIds;
@@ -45,6 +47,16 @@ static std::vector<SoldierGameObj*> Players() {
     return result;
 }
 static bool HasPlayers() { return !Players().empty(); }
+static bool CoopMap() {
+    const char* map = The_Game()->Get_Map_Name();
+    if (!_stricmp(map,"M00_Tutorial.mix") || !_stricmp(map,"M00_Tutorial")) return true;
+    for (int i=1; i<=11; ++i) {
+        char name[20]; sprintf(name,"M%02d.mix",i);
+        if (!_stricmp(map,name)) return true;
+        name[3] = '\0'; if (!_stricmp(map,name)) return true;
+    }
+    return false;
+}
 static DynamicVectorClass<SpawnerClass*>& Spawners() {
     // Pinned TT 4.8.4 FDS, also used by Dragonade 1.11.1 engine_da.cpp.
     // prepare_bundle.py verifies the unpatched executable before the port patch.
@@ -62,6 +74,7 @@ static void Begin(int number) {
     ready = spawnValid = transitionIssued = false;
     outcomeTime = 0;
     observedKeys.clear(); markers.clear(); destinations.clear(); character.clear();
+    revokedKeys = 0; purchasedCharacters.clear();
     actorIds.clear(); actorOriginalIds.clear(); actorsRestored = actorLoadFailed = false;
     Console_Output("[Campaign] M%02d shared mission state reset.\n",number);
 }
@@ -225,6 +238,7 @@ static void Finish(bool success) {
     Console_Output("[Campaign] completion requested success=%d result=%d\n",success,static_cast<int>(state.outcome));
 }
 static void ApplyKeys(SoldierGameObj* p) {
+    if (!DASettingsManager::Get_Bool("CampaignSharedKeys",true)) return;
     const uint32_t current = static_cast<uint32_t>(p->Get_Key_Ring());
     for (int i = 0; i < 32; ++i) {
         const auto bit = uint32_t(1) << i;
@@ -233,9 +247,22 @@ static void ApplyKeys(SoldierGameObj* p) {
     observedKeys[Commands->Get_ID(p)] = state.keys;
 }
 static void Key(GameObject* obj,int key,bool grant) {
-    if (!state.active() || !Human(obj)) { originalKey(obj,key,grant); return; }
+    if (!CoopMap() || !DASettingsManager::Get_Bool("CampaignSharedKeys",true) || !Human(obj)) { originalKey(obj,key,grant); return; }
     state.grant(key,grant);
+    if (key >= 0 && key < 32) {
+        if (grant) revokedKeys &= ~(uint32_t(1) << key);
+        else revokedKeys |= uint32_t(1) << key;
+    }
     for (auto* p : Players()) ApplyKeys(p);
+}
+static void TickSharedKeys() {
+    if (!CoopMap() || !DASettingsManager::Get_Bool("CampaignSharedKeys",true)) return;
+    const auto players = Players();
+    for (auto* p : players) {
+        const uint32_t current = static_cast<uint32_t>(p->Get_Key_Ring());
+        state.keys |= current & ~observedKeys[Commands->Get_ID(p)] & ~revokedKeys;
+    }
+    for (auto* p : players) ApplyKeys(p);
 }
 static void Join(GameObject* obj,int conversation,bool move,bool turn,bool face) {
     // A narrative must never freeze a human player's controls in multiplayer.
@@ -306,6 +333,14 @@ static void RestoreCampaignPlayerArmor(SoldierGameObj* obj) {
 static bool PlacePlayer(GameObject* obj) {
     if (!state.active() || !Human(obj)) return true;
     if (!ready) return false;
+    // A PT purchase reinitializes the same soldier. Keep the purchased class
+    // and position for this life; a new respawn gets a new object ID.
+    if (purchasedCharacters.count(Commands->Get_ID(obj))) {
+        ApplyKeys(obj->As_SoldierGameObj());
+        if (state.mission == 6) Attach_Script_Once(obj,"M06_Havoc_DLS","");
+        if (state.mission == 7) Attach_Script_Once(obj,"M07_Havoc_DLS","");
+        return true;
+    }
     auto* movable = obj->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass();
     Vector3 location;
     if (!movable || !movable->Find_Teleport_Location(spawn,8.0f,&location)) return false;
@@ -352,13 +387,6 @@ static void Tick(float elapsed) {
     if (players.empty()) return;
     RestoreActors();
     if (!ready) return;
-    // Inventory pickups bypass ScriptCommands::Grant_Key. Capture only newly
-    // observed bits, so an explicit revocation cannot be undone by a stale copy.
-    for (auto* p : players) {
-        const uint32_t current = static_cast<uint32_t>(p->Get_Key_Ring());
-        state.keys |= current & ~observedKeys[Commands->Get_ID(p)];
-    }
-    for (auto* p : players) ApplyKeys(p);
     TickSpawners(elapsed);
 }
 static bool Inside(GameObject* zone,GameObject* obj) {

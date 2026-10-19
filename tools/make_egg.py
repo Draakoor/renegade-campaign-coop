@@ -10,7 +10,7 @@ egg = {
     'meta': {'version': 'PTDL_v2', 'update_url': None},
     'exported_at': '2026-10-19T00:00:00+00:00',
     'name': 'Renegade Campaign Coop',
-    'author': 'admin@wellisch-itservice.de',
+    'author': 'Draakoor@users.noreply.github.com',
     'description': 'TT 4.8.4 / DA 1.11.1 with M06/M07/M09 coop adaptations. Supply CoopBeta424.zip, server.dat and the original M06/M07/M09 .mix and .LVL files in input/. Set TT_DOWNLOAD_URL. First start assembles a private full-campaign test rotation; human playtests pending.',
     'features': [],
     'docker_images': {'Renegade Campaign Coop (development)': image},

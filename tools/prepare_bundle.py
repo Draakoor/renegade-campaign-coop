@@ -82,7 +82,7 @@ def prepare(work, game, output, *, fds_data=None, mission_input=None, download_u
     if digest(original_fds) != lock['fds_data']['sha256']:
         raise RuntimeError('Original FDS server.dat hash mismatch')
     shutil.copyfile(original_fds, server / 'server.dat')
-    copy_tree(legacy / 'MPFGames' / 'CoopServer' / 'ttfs', server / 'WellischRenegade' / 'FDS' / 'ttfs')
+    copy_tree(legacy / 'MPFGames' / 'CoopServer' / 'ttfs', server / 'NovaraRenegade' / 'FDS' / 'ttfs')
 
     defaults = output / 'defaults'
     defaults.mkdir()

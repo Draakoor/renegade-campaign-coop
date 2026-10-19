@@ -90,6 +90,9 @@ Der Installer prüft alle Release-Dateien, sichert ersetzte Binärdateien/Assets
 - Schadenskorrektur für M06/M07/M09: Die CoopBeta-Presets `Commando_Stealth` und `Commando_Desert` verwenden unverwundbare `Blamo`-Rüstung. Beim Platzieren eines menschlichen Kampagnenspielers ersetzt das Plugin diese durch Havocs normale Körper-/Rüstungstypen. Modell, Waffen und Lebenspunkte bleiben erhalten; NPC-Presets werden nicht verändert. Der isolierte Engine-Test bestätigt Schaden und Tod auf allen drei Karten ([Prüfbericht](validation/player-armor-2026-10-20.json)); der Test mit einem echten Spieler steht noch aus.
 - Die Original-LVL-Dateien liefern Positionen und Skripte fehlender NPCs. Der Installer erzeugt daraus private `.wcm`-Tabellen; das Plugin stellt die vom FDS ausgelassenen platzierten Soldaten wieder her. Original-Leveldateien bleiben unverändert. Die drei Karten nutzen ihre Original-Spielassets plus das bestehende CoopContent-Paket.
 - Der Legacy-`!goto`-Befehl ist noch nicht portiert.
+- Versorgungsfunktionen gelten für Tutorial und M01–M11: feste Waffenfundstellen erscheinen nach dem Aufheben erneut, ebenso feste Schlüsselkarten. Später erzeugte Gegner-/Spieler-Drops werden nicht registriert. Originale Missionsskripte am Fundobjekt werden nicht auf Ersatzobjekte kopiert, damit einmalige Missionsereignisse nicht erneut ausgelöst werden. Kartenobjekte, die ein Missionsskript ohne Aufheben entfernt, werden nicht wiederhergestellt.
+- Gemeinsame Schlüsselkarten werden auf alle lebenden Spieler, Respawns und spätere Beitritte übertragen. Explizit entzogene Schlüssel bleiben gesperrt, bis sie erneut verliehen werden.
+- Kaufkonsolen öffnen das vorhandene GDI-Infanteriemenü (Benutzen-Taste oder `!buy`/`!pt` in höchstens 6 Metern Abstand). Sie entstehen am ersten Spielerspawn, erreichten Kontrollpunkten und bei erreichten festen Waffenfundstellen mit konfigurierbarem Mindestabstand. Die Position war zuvor von einem Spieler begehbar; die Konsole blockiert keine Wege. Ein Kauf erhält Position und Schlüssel, gilt für dieses Leben und verwendet die vorhandenen GDI-Preise. Clientdarstellung und vollständige Missionsdurchläufe müssen noch spielerisch geprüft werden.
 - Die DA-Abfrage meldet durch einen Upstream-Factory-Test derzeit `TC=1`, obwohl Konfiguration und Plugin Teamwechsel sperren. Mit echten Clients prüfen und die Anzeige korrigieren.
 - Der Supervisor sendet im öffentlichen Testbetrieb alle 25 Sekunden Heartbeats gemäß [TT-Protokoll](https://tiberiantechnologies.org/Docs/?page=GameSpy%20Protocol%20and%20New%20Broadcaster). Dragonade beantwortet weiterhin die UDP-Abfragen; sein alter Heartbeat bleibt auf localhost begrenzt. Ein erfolgreicher Master meldet `heartbeatresult=0`. Ein echter Listenbeitritt muss separat geprüft werden.
 - Lokal geprüft: Laden aller drei Karten, ursprüngliche Startpunkte, Wiederherstellung von 45/41/119 NPCs (M06/M07/M09), Dead6/Mobius/Sydney inklusive Skripten, Kartenwechsel, Neuladen und Missionsneustart nach Mobius-Tod. [Technischer Prüfbericht](validation/native-2026-10-19.json). Diese Diagnosen hatten **null echte Clients**.
@@ -104,6 +107,40 @@ Die neuen Dateien sind `da_campaign.dll`, `data/M06.mix`, `data/M07.mix`, `data/
 `campaign_dump` in der Panel-Konsole schreibt Missionsobjekte/Spawner und den gemeinsamen Zustand ins lokale Protokoll. Ausschließlich auf einem isolierten Testserver lässt `CampaignDiagnostics=1` in `[General]` der `da.ini` die Befehle `campaign_probe_spawners` und `campaign_test_mobius_death` zu. Der erste erzeugt NPCs ohne Spieler; der zweite prüft Mobius-Tod und Kartenneustart. Diese künstlichen Ereignisse sind keine Missionsabnahme. Im normalen Betrieb bleibt die Option aus.
 
 `campaign_test_player_armor` prüft bei aktivierten Diagnosen auf M06/M07/M09 an einer künstlichen Testfigur Schaden vor/nach der Rüstungskorrektur sowie tödlichen Schaden. Der Befehl verweigert den Test bei anwesenden lebenden Spielern. `campaign_dump` protokolliert für echte Spieler zusätzlich Körper-/Rüstungstyp, Lebenspunkte und Sterblichkeit.
+
+`campaign_supplies` zeigt registrierte Waffen/Schlüssel und Kaufkonsolen. `campaign_test_supplies` prüft auf einem leeren Diagnoseserver mit künstlicher Aufhebe-Nachricht das Wiedererscheinen und den Ausschluss später erzeugter Drops. Das ersetzt keinen echten Client-Test von Aufheben oder Kaufmenü.
+
+Der [Versorgungs-Prüfbericht](validation/coop-services-2026-10-20.json) dokumentiert Kartenladeprüfungen für alle zwölf Karten und bestandene Nachspawn-Proben auf M06/M07/M09. Die Ersatzobjekte blieben dabei exakt an ihrer Fundstelle. Kaufmenü, tatsächliche Käufe und gemeinsamer Schlüsselbesitz mit mehreren Clients sind noch nicht spielerisch abgenommen.
+
+## Konfiguration im Panel
+
+Die laufenden Einstellungen liegen im Servervolume, unter `server/`. `defaults/` im Repository wird nur für neue Installationen verwendet. Vor Änderungen eine Kopie der betreffenden Datei sichern.
+
+| Datei | Einstellungen |
+|---|---|
+| `server/da.ini` | Dragonade, Coop-Funktionen, Spawn-Schutz, GameSpy-Abfrage |
+| `server/data/svrcfg_cnc.ini` | `bGameTitle`, `MaxPlayers`, `StartingCredits`, Spielpasswort, Spielregeln |
+| `server/tt.cfg` | Rotation, Kartendefinitionen und TT-Downloads |
+| `server/server.ini` | Spielport, Netzwerkeinstellungen, `ResumeRotation` |
+| `server/data/paths.ini` | Interne Datenverzeichnisse; bei Umbenennung auch TTFS-Dateien kopieren |
+
+Coop-Werte in `[General]` der `server/da.ini`:
+
+| Schlüssel | Standard | Bedeutung |
+|---|---:|---|
+| `CampaignSharedKeys` | `1` | Gemeinsamer Schlüsselbesitz |
+| `CampaignWeaponRespawnSeconds` | `15` | Wiedererscheinen fester Waffen; `0` deaktiviert es |
+| `CampaignKeyRespawnSeconds` | `5` | Wiedererscheinen fester Schlüsselkarten; `0` deaktiviert es |
+| `CampaignTerminals` | `1` | Kaufkonsolen aktivieren |
+| `CampaignTerminalSpacing` | `75` | Mindestabstand zwischen Konsolen an Waffenfundstellen |
+| `CampaignTerminalModel` | `o_nod_console-o` | Vorhandenes Konsolenmodell |
+| `CampaignAdminName` | leer | Name, der eine Admin-Freigabe anfordern darf |
+
+Dragonade unterstützt Kartenüberschreibungen in Abschnitten wie `[M06.mix]`. Konsolen und Karteninventar werden beim Kartenladen aufgebaut; nach Änderungen ist ein Kartenwechsel bzw. Serverneustart erforderlich. Adaptive Schwierigkeit ist bislang nicht implementiert.
+
+### Admin-Freigabe
+
+Ein Name allein authentifiziert bei GameSpy/LAN keinen Administrator. `CampaignAdminName` erlaubt deshalb nur eine Anfrage: im Spiel `!admin` eingeben, dann den privat angezeigten Befehl `campaign_admin <Code>` innerhalb von fünf Minuten in der geschützten Panel-Konsole bestätigen. Die Anfrage gilt einmal und verfällt beim Verlassen; Adminrechte enden bei neuer Verbindung. Weder Passwörter noch Client-Identifikatoren werden dafür veröffentlicht. `!adminhelp` zeigt `!nextmap`, `!restartmap` und `!kick <Spieler-ID>`. Es gibt keinen Chat-Befehl zum Ausführen beliebiger Konsolenbefehle.
 
 Die Portierung verwendet die Spawner-Schnittstelle der festgelegten FDS-Version. Der Installer lehnt andere Executable-Hashes ab. Ein Upgrade von TT/Dragonade benötigt eine erneute Prüfung der Schnittstellen.
 

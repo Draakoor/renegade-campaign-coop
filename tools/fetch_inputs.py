@@ -35,7 +35,7 @@ def fetch(work, name):
     archive.parent.mkdir(parents=True, exist_ok=True)
     if not archive.exists():
         temp = archive.with_suffix('.downloading')
-        request = urllib.request.Request(entry['url'], headers={'User-Agent': 'Wellisch-Renegade-Coop/0.1'})
+        request = urllib.request.Request(entry['url'], headers={'User-Agent': 'Novara-Renegade-Coop/0.1'})
         with urllib.request.urlopen(request, timeout=120) as response, temp.open('wb') as output:
             shutil.copyfileobj(response, output)
         if sha(temp) != entry['sha256']:

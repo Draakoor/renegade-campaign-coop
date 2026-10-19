@@ -64,6 +64,17 @@ def append_command(server, command):
         out.write(command + '\n')
 
 
+def package_directory(server):
+    """Respect the installed path configuration when upgrading older volumes."""
+    paths = configparser.ConfigParser(interpolation=None)
+    paths.read(server / 'data' / 'paths.ini')
+    base = paths.get('paths', 'FileBase', fallback='NovaraRenegade')
+    fds = paths.get('paths', 'FileFDS', fallback='FDS')
+    if any(not re.fullmatch(r'[A-Za-z0-9_-]+', part) for part in (base, fds)):
+        raise RuntimeError('paths.ini contains an invalid package directory.')
+    return server / base / fds / 'ttfs'
+
+
 def resume_active_mission(server):
     """FDS advances resumerotation.txt during quit; restore the last loaded map."""
     settings = configparser.ConfigParser(interpolation=None)
@@ -134,14 +145,14 @@ def run_locked():
     env['WINEDEBUG'] = '-all'
     try:
         # vcrun2012 is required by TT; vcrun2022 by the newly built plugin.
-        marker = ROOT / '.wine' / '.wellisch-runtime-v1'
+        marker = ROOT / '.wine' / '.novara-runtime-v1'
         if not marker.exists():
             print('[Supervisor] Preparing persistent Wine prefix and Microsoft/DirectX runtimes.', flush=True)
             subprocess.run(['wineboot', '-u'], env=env, check=True)
             subprocess.run(['winetricks', '-q', 'vcrun2012', 'vcrun2022', 'd3dx9_43', 'd3dcompiler_43'], env=env, check=True)
             marker.write_text('TT4.8.4/DA1.11.1\n')
         from functools import partial
-        package_root = server / 'WellischRenegade' / 'FDS' / 'ttfs'
+        package_root = package_directory(server)
         http = ThreadingHTTPServer(('0.0.0.0', 35002), partial(PackageHandler, directory=str(package_root)))
         threading.Thread(target=http.serve_forever, daemon=True).start()
         print('[Supervisor] TT package downloads available on TCP 35002.', flush=True)

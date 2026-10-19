@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "../plugin/mission_state.h"
+#include "../plugin/admin_requests.h"
 #include <algorithm>
 #include <cassert>
 #include <iostream>
@@ -22,6 +23,21 @@ static void permutations(int mission,std::vector<int> goals) {
     } while (std::next_permutation(goals.begin(),goals.end()));
 }
 int main() {
+    AdminRequests admin;
+    const std::string token(32,'a'),other(32,'b');
+    admin.issue(1,token,100);
+    assert(admin.consume(other,200) == 0);
+    assert(admin.consume(token,200) == 1);
+    assert(admin.consume(token,201) == 0); // No replay.
+    admin.issue(1,token,100);
+    admin.disconnect(1); // A replacement connection using the same ID/name.
+    admin.issue(1,other,110);
+    assert(admin.consume(token,120) == 0);
+    assert(admin.consume(other,120) == 1);
+    admin.issue(1,token,100);
+    assert(admin.consume(token,300101) == 0);
+    admin.issue(1,token,0xfffffff0u);
+    assert(admin.consume(token,20) == 1); // Uptime counter rollover.
     permutations(6,{601,603,604,611});
     permutations(7,{701,702,703,709,710});
     permutations(9,{901,902,903});

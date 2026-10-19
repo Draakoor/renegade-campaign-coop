@@ -1,0 +1,129 @@
+{
+  "date": "2026-10-20",
+  "environment": "Isolated Windows x86 FDS / TT 4.8.4 / Dragonade 1.11.1",
+  "human_clients": 0,
+  "final_plugin_sha256": "c3c85234a200b0e9118b3301f36da5e750f951e9093991542a74b76711d4ac9f",
+  "map_load_checks": [
+    {
+      "map": "M00_Tutorial",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M00_Tutorial.mix weapons=3 keys=0 pending=0 terminals=1 shared_keys=0"
+    },
+    {
+      "map": "M01",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M01.mix weapons=46 keys=0 pending=0 terminals=0 shared_keys=0"
+    },
+    {
+      "map": "M02",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M02.mix weapons=35 keys=3 pending=0 terminals=0 shared_keys=0"
+    },
+    {
+      "map": "M03",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M03.mix weapons=5 keys=1 pending=0 terminals=0 shared_keys=0"
+    },
+    {
+      "map": "M04",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M04.mix weapons=67 keys=0 pending=0 terminals=0 shared_keys=0"
+    },
+    {
+      "map": "M05",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M05.mix weapons=71 keys=0 pending=0 terminals=0 shared_keys=0"
+    },
+    {
+      "map": "M06",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M06.mix weapons=15 keys=0 pending=0 terminals=0 shared_keys=1536"
+    },
+    {
+      "map": "M07",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M07.mix weapons=54 keys=0 pending=0 terminals=0 shared_keys=0"
+    },
+    {
+      "map": "M08",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M08.mix weapons=87 keys=0 pending=0 terminals=0 shared_keys=0"
+    },
+    {
+      "map": "M09",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M09.mix weapons=25 keys=2 pending=0 terminals=0 shared_keys=1024"
+    },
+    {
+      "map": "M10",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M10.mix weapons=64 keys=0 pending=0 terminals=0 shared_keys=0"
+    },
+    {
+      "map": "M11",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M11.mix weapons=40 keys=1 pending=0 terminals=0 shared_keys=0"
+    }
+  ],
+  "final_synthetic_resupply_checks": [
+    {
+      "map": "M07",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M07.mix weapons=54 keys=0 pending=0 terminals=0 shared_keys=0",
+      "synthetic_probe": [
+        "[Novara] DIAGNOSTIC simulated_collection=POW_Nuclear_Missle_Beacon tracked=1",
+        "[Novara] DIAGNOSTIC runtime_drop_excluded=1",
+        "[Novara] Coop terminal at -172.23,147.64,30.25",
+        "[Novara] DIAGNOSTIC terminal_objects=1 available_characters=23",
+        "[Novara] Fixed weapon respawned: POW_Nuclear_Missle_Beacon",
+        "[Novara] DIAGNOSTIC resupply POW_Nuclear_Missle_Beacon restored=1 original=126507 current=1500000210 alive=1 pending=0 distance=0.000",
+        "[Novara] DIAGNOSTIC resupply result=PASS; synthetic actor, no client/menu playtest."
+      ]
+    },
+    {
+      "map": "M06",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M06.mix weapons=15 keys=0 pending=0 terminals=0 shared_keys=1536",
+      "synthetic_probe": [
+        "[Novara] DIAGNOSTIC simulated_collection=POW_MineRemote_Player tracked=1",
+        "[Novara] DIAGNOSTIC runtime_drop_excluded=1",
+        "[Novara] Coop terminal at -101.26,-142.77,4.96",
+        "[Novara] DIAGNOSTIC terminal_objects=1 available_characters=23",
+        "[Novara] Fixed weapon respawned: POW_MineRemote_Player",
+        "[Novara] DIAGNOSTIC resupply POW_MineRemote_Player restored=1 original=109620 current=1500000147 alive=1 pending=0 distance=0.000",
+        "[Novara] DIAGNOSTIC resupply result=PASS; synthetic actor, no client/menu playtest."
+      ]
+    },
+    {
+      "map": "M09",
+      "clients": 0,
+      "startup": "[Novara] supplies map=M09.mix weapons=25 keys=2 pending=0 terminals=0 shared_keys=1024",
+      "synthetic_probe": [
+        "[Novara] DIAGNOSTIC simulated_collection=POW_Chaingun_Player tracked=1",
+        "[Novara] DIAGNOSTIC simulated_collection=Level_01_Keycard tracked=1",
+        "[Novara] DIAGNOSTIC runtime_drop_excluded=1",
+        "[Novara] Coop terminal at -126.85,487.70,-189.63",
+        "[Novara] DIAGNOSTIC terminal_objects=1 available_characters=23",
+        "[Novara] Fixed key respawned: Level_01_Keycard",
+        "[Novara] Fixed weapon respawned: POW_Chaingun_Player",
+        "[Novara] DIAGNOSTIC resupply POW_Chaingun_Player restored=1 original=1101323 current=1500000279 alive=1 pending=0 distance=0.000",
+        "[Novara] DIAGNOSTIC resupply Level_01_Keycard restored=1 original=2005241 current=1500000232 alive=1 pending=0 distance=0.000",
+        "[Novara] DIAGNOSTIC resupply result=PASS; synthetic actor, no client/menu playtest."
+      ]
+    }
+  ],
+  "resolved_during_testing": "Initial replacements inherited drop physics and drifted up to 1.064 m. Fixed by preserving the collection transform and immobilizing fixed supplies. Final probes report 0.000 m displacement.",
+  "automated_checks": {
+    "python_tests": 24,
+    "mission_objective_orderings": 150,
+    "admin_requests": "wrong token, replay, disconnect/ID reuse, expiry and uptime rollover passed",
+    "update_transaction": "backups, package directory migration, operator settings preservation and repeat application passed"
+  },
+  "limitations": [
+    "No human client pickup, purchase menu or credit deduction playtest.",
+    "No two-client shared-key/late-join acceptance.",
+    "No complete mission playthroughs or eight-client load test.",
+    "Tutorial startup checked; resupply probe has no direct non-spawner pickup fixture.",
+    "Map-loaded inventories checked across 12 maps before the final position and key-purchase fixes; final binary engine probes cover M06, M07 and M09."
+  ]
+}
