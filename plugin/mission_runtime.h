@@ -4,6 +4,7 @@
 #include "DefinitionMgrClass.h"
 #include "MoveablePhysClass.h"
 #include "ScriptZoneGameObj.h"
+#include "ArmorWarheadManager.h"
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -287,6 +288,21 @@ static void Loaded() {
     if (state.mission == 6) { state.grant(9,true); state.grant(10,true); }
     Console_Output("[Campaign] M%02d ready=%d spawners=%d character=%s spawn=%.2f,%.2f,%.2f\n",state.mission,ready,spawners.Count(),character.c_str(),spawn.X,spawn.Y,spawn.Z);
 }
+static void RestoreCampaignPlayerArmor(SoldierGameObj* obj) {
+    // CoopBeta's shared presets make the SP Havoc variants invulnerable.
+    // M06/M07 use Commando_Stealth and M09 uses Commando_Desert. Restore Blamo
+    // types to the normal Commando types; keep model, equipment and HP intact.
+    const char* expected = state.mission == 9 ? "Commando_Desert" : "Commando_Stealth";
+    if (!state.active() || !obj || _stricmp(Commands->Get_Preset_Name(obj),expected)) return;
+    auto* defense = obj->Get_Defense_Object();
+    const auto blamo = ArmorWarheadManager::Get_Armor_Type("Blamo");
+    if (defense->Get_Skin() == blamo) {
+        defense->Set_Skin(ArmorWarheadManager::Get_Armor_Type("SkinFlesh"));
+        defense->Mark_Owner_Dirty();
+    }
+    if (defense->Get_Shield_Type() == blamo)
+        defense->Set_Shield_Type(ArmorWarheadManager::Get_Armor_Type("ShieldKevlar"));
+}
 static bool PlacePlayer(GameObject* obj) {
     if (!state.active() || !Human(obj)) return true;
     if (!ready) return false;
@@ -297,6 +313,7 @@ static bool PlacePlayer(GameObject* obj) {
     // Change_Character reinitializes this soldier in place; it does not promise
     // a fresh object or another MPF_Player Created callback.
     if (!character.empty() && _stricmp(Commands->Get_Preset_Name(obj),character.c_str())) Change_Character(obj,character.c_str());
+    RestoreCampaignPlayerArmor(obj->As_SoldierGameObj());
     ApplyKeys(obj->As_SoldierGameObj());
     if (state.mission == 6) Attach_Script_Once(obj,"M06_Havoc_DLS","");
     if (state.mission == 7) Attach_Script_Once(obj,"M07_Havoc_DLS","");

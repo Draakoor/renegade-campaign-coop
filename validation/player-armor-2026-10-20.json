@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-20",
+  "environment": "Isolated Windows x86 FDS / TT 4.8.4 / Dragonade 1.11.1",
+  "human_clients": 0,
+  "kind": "synthetic engine damage probe; not a human mission playtest",
+  "checks": {
+    "M09": [
+      "[Campaign] DIAGNOSTIC armor before=200.0 legacy_after_hit=200.0 preserved=1 skin=SkinFlesh armor=ShieldKevlar",
+      "[Campaign] DIAGNOSTIC armor fixed_after_hit=100.0 lethal=1 result=PASS; synthetic actor, no human playtest."
+    ],
+    "M06": [
+      "[Campaign] DIAGNOSTIC armor before=200.0 legacy_after_hit=200.0 preserved=1 skin=SkinFlesh armor=ShieldKevlar",
+      "[Campaign] DIAGNOSTIC armor fixed_after_hit=100.0 lethal=1 result=PASS; synthetic actor, no human playtest."
+    ],
+    "M07": [
+      "[Campaign] DIAGNOSTIC armor before=200.0 legacy_after_hit=200.0 preserved=1 skin=SkinFlesh armor=ShieldKevlar",
+      "[Campaign] DIAGNOSTIC armor fixed_after_hit=100.0 lethal=1 result=PASS; synthetic actor, no human playtest."
+    ]
+  }
+}

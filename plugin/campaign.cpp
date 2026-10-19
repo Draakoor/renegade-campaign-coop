@@ -33,6 +33,13 @@ static void DumpMissionObjects() {
             fprintf(out, "%s%s", i ? ";" : "", observers[i]->Get_Name());
         }
         fputs("\n", out);
+        if (Campaign::Human(obj)) {
+            auto* defense = obj->As_SoldierGameObj()->Get_Defense_Object();
+            Console_Output("[Campaign] player=%d skin=%s armor=%s hp=%.1f shield=%.1f can_die=%d\n",
+                Get_Player_ID(obj), ArmorWarheadManager::Get_Armor_Name(defense->Get_Skin()),
+                ArmorWarheadManager::Get_Armor_Name(defense->Get_Shield_Type()),
+                defense->Get_Health(), defense->Get_Shield_Strength(), defense->Get_Can_Object_Die());
+        }
         ++count;
     }
     fclose(out);
@@ -98,6 +105,35 @@ ScriptRegistrant<MPF_Player> playerRegistrant("MPF_Player", "");
 class MPF_Player_Cant_Use_Goto : public ScriptImpClass {};
 ScriptRegistrant<MPF_Player_Cant_Use_Goto> noGotoRegistrant("MPF_Player_Cant_Use_Goto", "");
 
+static void TestPlayerArmor() {
+    if (!DASettingsManager::Get_Bool("CampaignDiagnostics",false) ||
+        !Campaign::state.active() || !Campaign::ready || Campaign::HasPlayers()) {
+        Console_Output("[Campaign] Armor probe requires diagnostics, a ready campaign mission and no human players.\n");
+        return;
+    }
+    // Synthetic actor on the isolated test server; never damages a player.
+    auto* obj = Commands->Create_Object(Campaign::character.c_str(),Vector3(10000,10000,10000));
+    if (!obj || !obj->As_SoldierGameObj()) return;
+    const int id = Commands->Get_ID(obj);
+    auto* defense = obj->As_SoldierGameObj()->Get_Defense_Object();
+    const float before = defense->Get_Health() + defense->Get_Shield_Strength();
+    Commands->Apply_Damage(obj,50,"Steel",nullptr);
+    const float legacy = defense->Get_Health() + defense->Get_Shield_Strength();
+    Campaign::RestoreCampaignPlayerArmor(obj->As_SoldierGameObj());
+    const bool preserved = legacy == defense->Get_Health() + defense->Get_Shield_Strength();
+    Console_Output("[Campaign] DIAGNOSTIC armor before=%.1f legacy_after_hit=%.1f preserved=%d skin=%s armor=%s\n",
+        before,legacy,preserved,ArmorWarheadManager::Get_Armor_Name(defense->Get_Skin()),
+        ArmorWarheadManager::Get_Armor_Name(defense->Get_Shield_Type()));
+    Commands->Apply_Damage(obj,50,"Steel",nullptr);
+    const float fixed = defense->Get_Health() + defense->Get_Shield_Strength();
+    Commands->Apply_Damage(obj,5000,"Steel",nullptr);
+    auto* remaining = Commands->Find_Object(id);
+    const bool dead = !remaining || Commands->Get_Health(remaining) <= 0;
+    Console_Output("[Campaign] DIAGNOSTIC armor fixed_after_hit=%.1f lethal=%d result=%s; synthetic actor, no human playtest.\n",
+        fixed,dead,(legacy == before && preserved && fixed < legacy && dead) ? "PASS" : "FAIL");
+    if (remaining) Commands->Destroy_Object(remaining);
+}
+
 // Panel console transport stays inside the persistent volume. This avoids
 // Wine console-input incompatibilities and a network-accessible admin socket.
 class PanelConsole : public DAEventClass {
@@ -141,6 +177,7 @@ public:
             *end = '\0';
             if (end > line && end[-1] == '\r') end[-1] = '\0';
             if (!_stricmp(line, "campaign_dump")) DumpMissionObjects();
+            else if (!_stricmp(line,"campaign_test_player_armor")) TestPlayerArmor();
             else if (!_stricmp(line,"campaign_probe_spawners")) {
                 if (DASettingsManager::Get_Bool("CampaignDiagnostics",false) && Campaign::ready) {
                     Campaign::RestoreActors();
