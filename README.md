@@ -2,151 +2,151 @@
 
 [![GHCR build](https://github.com/Draakoor/renegade-campaign-coop/actions/workflows/ghcr.yml/badge.svg)](https://github.com/Draakoor/renegade-campaign-coop/actions/workflows/ghcr.yml)
 
-Pterodactyl-/Docker-Entwicklungsumgebung für C&C Renegade: **TT 4.8.4, Dragonade 1.11.1, Wine, 8 Spieler**.
+A Pterodactyl/Docker development environment for C&C Renegade: **TT 4.8.4, Dragonade 1.11.1, Wine, 8 players**.
 
-**M06, M07 und M09 enthalten jetzt eigene Coop-Anpassungen; vollständige Spieltests stehen noch aus.** Neu aufgebaute Volumes enthalten die private Testrotation Tutorial → M01–M11. Bestehende Volumes behalten ihre Einstellungen und benötigen das unten beschriebene Update. Neue Volumes starten passwortgeschützt und ohne öffentliche GameSpy-Heartbeats. Ein Betreiber kann den unten beschriebenen öffentlichen Testbetrieb ausdrücklich aktivieren. Das öffentliche Repository und Image stellen den Entwicklungsstand bereit; sie bedeuten keine Freigabe der Kampagne.
+**M06, M07 and M09 now include custom coop adaptations; complete playtesting is still pending.** Newly created volumes include the private test rotation Tutorial → M01–M11. Existing volumes retain their settings and require the update described below. New volumes start with a password and no public GameSpy heartbeats. Operators can explicitly enable the public test mode described below. The public repository and image provide a development build; they do not represent a fully validated campaign release.
 
-## Image und Workflow
+## Image and workflow
 
 ```text
 ghcr.io/draakoor/renegade-campaign-coop:main
 ```
 
-Der Workflow testet den Python-Code und 150 Reihenfolgen gemeinsamer Missionsziele, kompiliert das Win32-Plugin aus den Quellen auf einem Windows-Runner, baut das Linux-amd64-Image und prüft dessen Laufzeit und Verhalten ohne Spieldaten. Erst danach veröffentlicht er es auf GHCR. Pushes auf `main`, Tags `v*` und manuelle Starts veröffentlichen; Pull Requests prüfen ohne Veröffentlichung. Tags sind `main`, `sha-<vollständiger Commit>` und gegebenenfalls der Versions-Tag. Es gibt bewusst keinen `latest`-Tag.
+The workflow tests the Python code and 150 orderings of shared mission objectives, compiles the Win32 plugin from source on a Windows runner, builds the Linux amd64 image, and checks its runtime and behavior when game assets are missing. It publishes to GHCR only after those checks pass. Pushes to `main`, `v*` tags and manual runs publish images; pull requests run checks without publishing. Image tags are `main`, `sha-<full-commit-sha>` and, where applicable, the version tag. There is deliberately no `latest` tag.
 
-GitHub Actions nutzt `GITHUB_TOKEN` mit `packages: write`; zusätzliche Registry-Secrets sind nicht erforderlich. Actions sind auf Commit-SHAs und das Wine-Basisimage auf einen Digest festgelegt. Der fertige Image-Digest steht in der Workflow-Zusammenfassung. Für einen festgeschriebenen Betrieb diesen Digest statt `:main` verwenden.
+GitHub Actions uses `GITHUB_TOKEN` with `packages: write`; no additional registry secrets are required. Actions are pinned to commit SHAs, and the Wine base image is pinned to a digest. The published image digest appears in the workflow summary. Use that digest instead of `:main` to pin a deployment.
 
-Das Image enthält Laufzeit, Installer, Plugin und Pluginquellen. **Es enthält keine Original-Leveldateien, CoopBeta-Spieldaten, Testkennwörter oder laufenden Serverprofile.** Die erforderlichen Assets werden ausschließlich im persistenten Servervolume zusammengestellt.
+The image contains the runtime, installer, plugin and plugin source. **It does not contain original level files, CoopBeta game assets, test passwords or live server profiles.** Required assets are assembled only inside the persistent server volume.
 
-## Ersteinrichtung mit Docker Compose
+## Initial setup with Docker Compose
 
-1. Repository klonen und `volume/input/` anlegen. Unter Linux benötigt der Benutzer `container` (UID/GID 1000) Schreibzugriff auf `volume/`.
-2. Die unveränderte [CoopBeta424.zip](https://multiplayerforums.com/files/file/9-coopbeta/) nach `volume/input/CoopBeta424.zip` kopieren.
-3. Die originale `server.dat` aus der eigenen Renegade-FDS-Installation nach `volume/input/server.dat` kopieren. Zusätzlich `M06.mix`, `M07.mix`, `M09.mix` aus `Data/` und `M06.LVL`, `M07.LVL`, `M09.LVL` aus `Modding Support/Single Player Level Source Files/` der EA-Installation in `volume/input/` ablegen. Alle acht Eingaben werden gegen `sources.lock.json` geprüft.
-4. `.env.example` nach `.env` kopieren und `TT_DOWNLOAD_URL=http://DEINE_OEFFENTLICHE_IP:35002/` setzen.
-5. Starten:
+1. Clone the repository and create `volume/input/`. On Linux, the `container` user (UID/GID 1000) needs write access to `volume/`.
+2. Copy the unmodified [CoopBeta424.zip](https://multiplayerforums.com/files/file/9-coopbeta/) to `volume/input/CoopBeta424.zip`.
+3. Copy the original `server.dat` from your own Renegade FDS installation to `volume/input/server.dat`. Also place `M06.mix`, `M07.mix` and `M09.mix` from `Data/`, and `M06.LVL`, `M07.LVL` and `M09.LVL` from the EA installation's `Modding Support/Single Player Level Source Files/` directory, in `volume/input/`. All eight input files are checked against `sources.lock.json`.
+4. Copy `.env.example` to `.env` and set `TT_DOWNLOAD_URL=http://YOUR_PUBLIC_IP:35002/`.
+5. Start the server:
 
 ```sh
 docker compose up -d
 docker compose logs -f renegade
 ```
 
-Beim ersten Start werden die festgelegten TT-/DA-Pakete von ihren offiziellen Quellen heruntergeladen und mit SHA256 geprüft. Das Image stellt daraus und den lokalen Eingaben den Server zusammen. Danach installiert Wine die benötigten Microsoft-/DirectX-Laufzeiten. Dieser erste Start dauert mehrere Minuten.
+On first startup, the pinned TT/DA packages are downloaded from their official sources and verified using SHA256. The image assembles the server from those packages and the local input files. Wine then installs the required Microsoft/DirectX runtimes. This first startup takes several minutes.
 
-| Port | Protokoll | Zweck |
+| Port | Protocol | Purpose |
 | --- | --- | --- |
-| 35000 | UDP | Spiel |
-| 35001 | UDP | GameSpy-Abfrage |
-| 35002 | TCP | Automatische TT-Paketdownloads |
+| 35000 | UDP | Gameplay |
+| 35001 | UDP | GameSpy queries |
+| 35002 | TCP | Automatic TT package downloads |
 
-Die Ports sind in dieser Entwicklungsfassung festgelegt. Ein bloßes Ändern des Docker-Portmappings passt die Spielport-Ankündigung nicht an. Es gibt keinen öffentlich erreichbaren Administrationsport. Der Downloadserver liefert ausschließlich Dateien aus den TTFS-Verzeichnissen `files` und `packages`.
+Ports are fixed in this development build. Changing Docker port mappings alone does not update the advertised game port. There is no publicly accessible administration port. The download server serves only files from the TTFS `files` and `packages` directories.
 
-Das generierte Spielkennwort steht privat unter `volume/server/data/svrcfg_cnc.ini`, Schlüssel `bPassword`. Für einen direkten Testbeitritt beispielsweise:
+The generated game password is stored privately in `volume/server/data/svrcfg_cnc.ini` under `bPassword`. For example, to join a private test directly:
 
 ```text
-game.exe +connect DEINE_IP:35000 +netplayername Testspieler +pass DEIN_TESTKENNWORT
+game.exe +connect YOUR_IP:35000 +netplayername TestPlayer +pass YOUR_TEST_PASSWORD
 ```
 
-Ein Spieler ist durch `NoGameplayPending=true` zugelassen. Ein Client mit TT benötigt den Paketdownload. Ein tatsächlicher Client-Beitritt und das Durchspielen der Missionen sind noch nicht Teil der bestandenen Abnahme.
+`NoGameplayPending=true` allows play with one participant. A TT client needs the package download. Actual client joins and complete mission playthroughs are not yet covered by the completed acceptance checks.
 
 ## Pterodactyl
 
-`egg-renegade-campaign-coop.json` in ein Nest importieren. Das Egg verwendet das GHCR-Image und startet `/opt/renegade-coop/runtime.py`. Die Allocation 35000 plus 35001/35002 zuweisen; `TT_DOWNLOAD_URL` auf die öffentliche Adresse setzen. Vorgeschlagene Ressourcen: 2048 MiB RAM, 200 % CPU, 10240 MiB Disk. Die acht oben aufgeführten Eingaben über den Dateimanager unter `input/` bereitstellen, dann starten.
+Import `egg-renegade-campaign-coop.json` into a nest. The egg uses the GHCR image and starts `/opt/renegade-coop/runtime.py`. Assign allocation 35000 plus 35001/35002, and set `TT_DOWNLOAD_URL` to the public address. Suggested resources: 2048 MiB RAM, 200% CPU and 10240 MiB disk. Upload the eight input files listed above to `input/` through the file manager, then start the server.
 
-Die Konsole wird über eine Datei im Volume an das Plugin übergeben. `daver` zeigt die Version, `quit` beendet geordnet. Der Panel-Stop sendet `quit`. Bei Docker sendet `docker compose stop` SIGTERM. Der Supervisor beendet nach einem Timeout ausschließlich seinen Wine-Prefix.
+Console input reaches the plugin through a file in the volume. `daver` displays the version; `quit` shuts down cleanly. The panel's Stop action sends `quit`. With Docker, `docker compose stop` sends SIGTERM. After a timeout, the supervisor terminates only its own Wine prefix.
 
-Ein bereits aufgebautes `bundle-dev-004`-Volume kann weiterverwendet werden. Vor einem Imagewechsel den Server stoppen und sichern; `installed.json`, `server/`, `.wine/`, `defaults/` und `validation.json` erhalten. Ein noch vorhandenes altes `runtime.lock` erst nach bestätigtem Ende des alten Prozesses untersuchen. Das neue Image nutzt eine stabile Dateisperre, die nach einem Prozessabbruch wieder freigegeben wird.
+An existing `bundle-dev-004` volume can be reused. Stop and back up the server before changing images; preserve `installed.json`, `server/`, `.wine/`, `defaults/` and `validation.json`. Investigate a remaining legacy `runtime.lock` only after confirming that the old process has stopped. The new image uses a stable file lock that is released if the process exits or crashes.
 
-## Öffentlicher Testbetrieb
+## Public test mode
 
-Der Betreiber kann die unvollständig getestete Kampagne ausdrücklich für öffentliche Tests freigeben. Dazu den Server stoppen und im Volume ausführen (im Image liegt das Werkzeug unter `/opt/renegade-coop/tools/set_public.py`):
+Operators can explicitly open the incompletely tested campaign for public testing. Stop the server, then run the following against the volume; the tool is located at `/opt/renegade-coop/tools/set_public.py` inside the image:
 
 ```sh
 python3 /opt/renegade-coop/tools/set_public.py --root /home/container --mode public-test
 ```
 
-Anschließend normal starten. Das Werkzeug sichert die bestehenden Einstellungen unter `backups/publication-<UTC>/`, deaktiviert das Spielpasswort und künstliche Missionsdiagnosen und schreibt `publication.json`. Das bisherige Testkennwort bleibt für eine Rückkehr zum privaten Betrieb erhalten; es wird weder angekündigt noch protokolliert. `validation.json`, Rotation und Missionsfortschritt werden nicht verändert. Mit `--mode development` bei gestopptem Server wieder privat schalten.
+Then start normally. The tool backs up existing settings under `backups/publication-<UTC>/`, disables the game password and synthetic mission diagnostics, and writes `publication.json`. The previous test password is retained for a return to private operation; it is neither advertised nor logged. The tool does not change `validation.json`, the rotation or mission progression. To return to private mode, stop the server and run the tool with `--mode development`.
 
-Der Supervisor kündigt UDP 35001 erst an, wenn Dragonade auf Abfragen antwortet. Ausgehend muss UDP 27900 erreichbar sein. Er nutzt alle sieben von TT dokumentierten Community-Master und einen 25-Sekunden-Timer unabhängig von pausierter Spielzeit. Beim Stoppen enden die Heartbeats; Listeneinträge verfallen beim Master. `Public campaign test - mission playtests pending` und `Validation=pending` kennzeichnen die noch offene Abnahme.
+The supervisor advertises UDP 35001 only after Dragonade responds to queries. Outbound UDP 27900 must be reachable. It uses all seven community masters documented by TT and a 25-second timer independent of paused gameplay time. Heartbeats stop when the server shuts down; master entries then expire. `Public campaign test - mission playtests pending` and `Validation=pending` identify the outstanding acceptance work.
 
-## Persistenz und Updates
+## Persistence and updates
 
-`/home/container` ist das Servervolume. Es enthält `server/`, `.wine/`, das geprüfte `release/`, `validation.json` und Sicherungen. Laufende Einstellungen werden nicht automatisch überschrieben. Ein geänderter Image-Tag aktualisiert einen bereits installierten Spielserver **nicht** heimlich; für Änderungen am Plugin bzw. Spielserver einen neuen geprüften Release-Baum bereitstellen und bei gestopptem Server installieren:
+`/home/container` is the server volume. It contains `server/`, `.wine/`, the verified `release/` tree, `validation.json` and backups. Live settings are not overwritten automatically. Changing an image tag **does not automatically update** an already installed game server. To update the plugin or game server, prepare a new verified release tree and install it while the server is stopped:
 
 ```sh
 python3 /opt/renegade-coop/bootstrap.py --root /home/container
 ```
 
-Der Installer prüft alle Release-Dateien, sichert ersetzte Binärdateien/Assets und übernimmt nur fehlende Konfigurationen. Vor einer Migration zusätzlich das ganze Volume sichern. Zur Wiederherstellung nur diesen Server stoppen und dessen gesichertes Volume zurückspielen. **Keine Skripte in diesem Projekt starten nginx oder andere Hostdienste neu.**
+The installer verifies every release file, backs up replaced binaries/assets, and adds configuration files only when they are missing. Back up the entire volume before a migration as well. To roll back, stop only this server and restore its backed-up volume. **No scripts in this project restart nginx or other host services.**
 
-## Entwicklungsstand
+## Development status
 
-- Im bisherigen privaten Hostingtest: Tutorialstart unter Windows und Wine, Panel-Konsole, geordnetes Stoppen/erneuter Start, externe GameSpy-Abfrage und HTTP-Paketdownload erfolgreich.
-- CoopBeta-Dateien vorhanden: Tutorial, M01–M05, M08, M10, M11. Noch keine vollständigen Missionsdurchläufe nachgewiesen.
-- M06: gemeinsames Hacken des War-Room-Rechners, Wissenschaftler-Rettung, Sydney-Eskorte und Mendoza-Ziel. Der Rechner-Auslöser ist einmalig und übersteht einen unterbrochenen Dialog.
-- M07: gemeinsame Dead6-/Sydney-, SAM-, SSM- und Nuklearziele. Einzelne Spielertode lösen keinen Missionsfehlschlag aus; der Tod erforderlicher Begleitfiguren schon.
-- M09: Mobius-Eskorte mit Schutzanzug, Oberfläche und Rendezvous. Die Schutzanzug-Szene wird ohne Einzelspieler-Kamera/Teleport ausgeführt. Evakuierung verlangt Mobius und mindestens einen lebenden Spieler im Zielgebiet.
-- Alle drei: gemeinsamer Ziel-/Schlüsselstand, sichere Respawns am Missionsstart bzw. erreichten Kontrollpunkt, Synchronisierung späterer Beitritte, GDI, kein Friendly Fire/Teamwechsel/Zeitlimit. Erfolg wechselt zur nächsten Karte, Fehlschlag lädt dieselbe Karte neu. Ein Server-/Kartenneustart verwirft den Kontrollpunkt.
-- Schadenskorrektur für M06/M07/M09: Die CoopBeta-Presets `Commando_Stealth` und `Commando_Desert` verwenden unverwundbare `Blamo`-Rüstung. Beim Platzieren eines menschlichen Kampagnenspielers ersetzt das Plugin diese durch Havocs normale Körper-/Rüstungstypen. Modell, Waffen und Lebenspunkte bleiben erhalten; NPC-Presets werden nicht verändert. Der isolierte Engine-Test bestätigt Schaden und Tod auf allen drei Karten ([Prüfbericht](validation/player-armor-2026-10-20.json)); der Test mit einem echten Spieler steht noch aus.
-- Die Original-LVL-Dateien liefern Positionen und Skripte fehlender NPCs. Der Installer erzeugt daraus private `.wcm`-Tabellen; das Plugin stellt die vom FDS ausgelassenen platzierten Soldaten wieder her. Original-Leveldateien bleiben unverändert. Die drei Karten nutzen ihre Original-Spielassets plus das bestehende CoopContent-Paket.
-- Der Legacy-`!goto`-Befehl ist noch nicht portiert.
-- Versorgungsfunktionen gelten für Tutorial und M01–M11: feste Waffenfundstellen erscheinen nach dem Aufheben erneut, ebenso feste Schlüsselkarten. Später erzeugte Gegner-/Spieler-Drops werden nicht registriert. Originale Missionsskripte am Fundobjekt werden nicht auf Ersatzobjekte kopiert, damit einmalige Missionsereignisse nicht erneut ausgelöst werden. Kartenobjekte, die ein Missionsskript ohne Aufheben entfernt, werden nicht wiederhergestellt.
-- Gemeinsame Schlüsselkarten werden auf alle lebenden Spieler, Respawns und spätere Beitritte übertragen. Explizit entzogene Schlüssel bleiben gesperrt, bis sie erneut verliehen werden.
-- Kaufkonsolen öffnen das vorhandene GDI-Infanteriemenü (Benutzen-Taste oder `!buy`/`!pt` in höchstens 6 Metern Abstand). Sie entstehen am ersten Spielerspawn, erreichten Kontrollpunkten und bei erreichten festen Waffenfundstellen mit konfigurierbarem Mindestabstand. Die Position war zuvor von einem Spieler begehbar; die Konsole blockiert keine Wege. Ein Kauf erhält Position und Schlüssel, gilt für dieses Leben und verwendet die vorhandenen GDI-Preise. Clientdarstellung und vollständige Missionsdurchläufe müssen noch spielerisch geprüft werden.
-- Die DA-Abfrage meldet durch einen Upstream-Factory-Test derzeit `TC=1`, obwohl Konfiguration und Plugin Teamwechsel sperren. Mit echten Clients prüfen und die Anzeige korrigieren.
-- Der Supervisor sendet im öffentlichen Testbetrieb alle 25 Sekunden Heartbeats gemäß [TT-Protokoll](https://tiberiantechnologies.org/Docs/?page=GameSpy%20Protocol%20and%20New%20Broadcaster). Dragonade beantwortet weiterhin die UDP-Abfragen; sein alter Heartbeat bleibt auf localhost begrenzt. Ein erfolgreicher Master meldet `heartbeatresult=0`. Ein echter Listenbeitritt muss separat geprüft werden.
-- Lokal geprüft: Laden aller drei Karten, ursprüngliche Startpunkte, Wiederherstellung von 45/41/119 NPCs (M06/M07/M09), Dead6/Mobius/Sydney inklusive Skripten, Kartenwechsel, Neuladen und Missionsneustart nach Mobius-Tod. [Technischer Prüfbericht](validation/native-2026-10-19.json). Diese Diagnosen hatten **null echte Clients**.
-- Der Betreiber kann zunächst allein testen. Ein vollständiger Solo-Durchlauf aller Missionen, echte Mehrspieler-Beitritte, Sequenzen und der Lasttest mit acht Clients sind noch offen. Öffentlicher Testbetrieb gilt nicht als bestandene Kampagnenabnahme.
-- `ResumeRotation=true` ist gesetzt. Der Supervisor korrigiert den beim Beenden vorgerückten FDS-Rotationsindex anhand der zuletzt geladenen Karte; die Mission beginnt nach dem Neustart wieder von vorn. Kein persistenter Checkpoint-Spielstand.
-- `RELEASE_MODE=development` bleibt gesetzt. Öffentlicher Testbetrieb wird ausschließlich durch die gesicherte Konfigurationsänderung und `publication.json` gewählt.
+- Previous private hosting checks passed for Tutorial startup on Windows and Wine, the panel console, clean shutdown/restart, external GameSpy queries and HTTP package downloads.
+- CoopBeta supplies Tutorial, M01–M05, M08, M10 and M11. Complete mission playthroughs have not yet been verified.
+- M06: shared War Room computer hacking, scientist rescue, Sydney escort and the Mendoza objective. The computer trigger runs once and survives an interrupted dialogue.
+- M07: shared Dead6/Sydney, SAM, SSM and nuclear objectives. Individual player deaths do not cause mission failure; deaths of required escort characters do.
+- M09: Mobius escort with the protective suit, surface and rendezvous stages. The suit sequence runs without a single-player camera or teleport. Evacuation requires Mobius and at least one living player in the destination area.
+- All three: shared objectives/keys, safe respawns at the mission start or a reached checkpoint, late-join synchronization, GDI team, and no friendly fire, team switching or time limit. Success advances to the next map; failure reloads the same map. A server or map restart discards the checkpoint.
+- Damage correction for M06/M07/M09: CoopBeta's `Commando_Stealth` and `Commando_Desert` presets use invulnerable `Blamo` armor. When placing a human campaign player, the plugin replaces it with Havoc's normal skin/armor types. The model, weapons and health are preserved; NPC presets are unchanged. Isolated engine tests confirm damage and death on all three maps ([test report](validation/player-armor-2026-10-20.json)); testing with a real player is still pending.
+- Original LVL files supply positions and scripts for missing NPCs. The installer generates private `.wcm` tables from them; the plugin restores placed soldiers omitted by the FDS. Original level files remain unchanged. These three maps use their original game assets plus the existing CoopContent package.
+- The legacy `!goto` command has not yet been ported.
+- Supply features apply to Tutorial and M01–M11: fixed weapon pickups and keycards respawn after collection. Later NPC/player drops are not tracked. Mission scripts attached to the original pickup are not copied to replacements, preventing one-time mission events from firing again. Map objects removed by a mission script without being collected are not restored.
+- Shared keycards synchronize to all living players, respawns and late joiners. Explicitly revoked keys remain unavailable until granted again.
+- Purchase terminals open the existing GDI infantry menu using the Use key or `!buy`/`!pt` within 6 meters. They appear at the first player spawn, reached checkpoints and reached fixed weapon locations, with configurable minimum spacing. Each position was accessible to a player; the console does not block movement. Purchases preserve position and keys, apply for the current life, and use existing GDI prices. Client presentation and complete mission playthroughs still need playtesting.
+- Dragonade's query currently reports `TC=1` because of an upstream factory check, even though the configuration and plugin block team switching. Verify this with real clients and correct the reported value.
+- In public test mode, the supervisor sends heartbeats every 25 seconds according to the [TT protocol](https://tiberiantechnologies.org/Docs/?page=GameSpy%20Protocol%20and%20New%20Broadcaster). Dragonade continues to answer UDP queries; its old heartbeat remains restricted to localhost. A successful master response contains `heartbeatresult=0`. Joining through an actual server list must be verified separately.
+- Local checks cover loading all three maps, original spawn points, restoring 45/41/119 NPCs on M06/M07/M09, Dead6/Mobius/Sydney with their scripts, map transitions, reloads and mission restart after Mobius dies. See the [technical test report](validation/native-2026-10-19.json). These diagnostics used **zero real clients**.
+- Operators can begin with solo testing. A full solo playthrough of every mission, real multiplayer joins, sequences and an eight-client load test remain outstanding. Public test mode does not count as completed campaign acceptance.
+- `ResumeRotation=true` is enabled. The supervisor corrects the FDS rotation index advanced during shutdown using the last loaded map; that mission starts from the beginning after a restart. There are no persistent checkpoint saves.
+- `RELEASE_MODE=development` remains set. Public test mode is selected only through the backed-up configuration change and `publication.json`.
 
-## Missionen lokal prüfen und bestehende Volumes aktualisieren
+## Testing missions locally and updating existing volumes
 
-Die neuen Dateien sind `da_campaign.dll`, `data/M06.mix`, `data/M07.mix`, `data/M09.mix` und die zugehörigen `.wcm`-Tabellen. Der Installer baut diese aus den geprüften Eingaben. Für ein bestehendes Volume zuerst stoppen und sichern, einen neuen Release-Baum mit `tools/prepare_bundle.py` erzeugen und mit `bootstrap.py` installieren. `server/tt.cfg` wird absichtlich nicht überschrieben: die neuen `gameDefinitions` und die gewünschte Rotation aus `defaults/tt.cfg` nach Sicherung gezielt übernehmen. Für M06/M07/M09 werden die originalen Karten auf dem TT-Client benötigt; neue Modelle/Texturen werden nicht verteilt.
+The new files are `da_campaign.dll`, `data/M06.mix`, `data/M07.mix`, `data/M09.mix` and their corresponding `.wcm` tables. The installer builds them from verified inputs. For an existing volume, stop and back it up first, generate a new release tree with `tools/prepare_bundle.py`, then install it with `bootstrap.py`. `server/tt.cfg` is intentionally preserved: after backing it up, merge the new `gameDefinitions` and desired rotation from `defaults/tt.cfg`. M06/M07/M09 require the original maps on the TT client; no new models or textures are distributed for them.
 
-`campaign_dump` in der Panel-Konsole schreibt Missionsobjekte/Spawner und den gemeinsamen Zustand ins lokale Protokoll. Ausschließlich auf einem isolierten Testserver lässt `CampaignDiagnostics=1` in `[General]` der `da.ini` die Befehle `campaign_probe_spawners` und `campaign_test_mobius_death` zu. Der erste erzeugt NPCs ohne Spieler; der zweite prüft Mobius-Tod und Kartenneustart. Diese künstlichen Ereignisse sind keine Missionsabnahme. Im normalen Betrieb bleibt die Option aus.
+`campaign_dump` in the panel console writes mission objects/spawners and shared state to local diagnostic output. On an isolated test server only, `CampaignDiagnostics=1` in the `[General]` section of `da.ini` enables `campaign_probe_spawners` and `campaign_test_mobius_death`. The former spawns NPCs without players; the latter tests Mobius's death and the subsequent map restart. These synthetic events do not constitute mission acceptance. Keep the option disabled during normal operation.
 
-`campaign_test_player_armor` prüft bei aktivierten Diagnosen auf M06/M07/M09 an einer künstlichen Testfigur Schaden vor/nach der Rüstungskorrektur sowie tödlichen Schaden. Der Befehl verweigert den Test bei anwesenden lebenden Spielern. `campaign_dump` protokolliert für echte Spieler zusätzlich Körper-/Rüstungstyp, Lebenspunkte und Sterblichkeit.
+With diagnostics enabled, `campaign_test_player_armor` uses a synthetic actor on M06/M07/M09 to check damage before and after the armor correction, including lethal damage. The command refuses to run while living human players are present. For real players, `campaign_dump` also logs skin/armor types, health and whether the character can die.
 
-`campaign_supplies` zeigt registrierte Waffen/Schlüssel und Kaufkonsolen. `campaign_test_supplies` prüft auf einem leeren Diagnoseserver mit künstlicher Aufhebe-Nachricht das Wiedererscheinen und den Ausschluss später erzeugter Drops. Das ersetzt keinen echten Client-Test von Aufheben oder Kaufmenü.
+`campaign_supplies` displays tracked weapons/keycards and purchase terminals. On an empty diagnostic server, `campaign_test_supplies` uses a synthetic collection notification to check replenishment and the exclusion of later drops. This does not replace a real client test of pickups or the purchase menu.
 
-Der [Versorgungs-Prüfbericht](validation/coop-services-2026-10-20.json) dokumentiert Kartenladeprüfungen für alle zwölf Karten und bestandene Nachspawn-Proben auf M06/M07/M09. Die Ersatzobjekte blieben dabei exakt an ihrer Fundstelle. Kaufmenü, tatsächliche Käufe und gemeinsamer Schlüsselbesitz mit mehreren Clients sind noch nicht spielerisch abgenommen.
+The [supply test report](validation/coop-services-2026-10-20.json) records map-loading checks for all twelve maps and successful respawn probes on M06/M07/M09. Replacement objects stayed exactly at their pickup locations. The purchase menu, actual purchases and shared key ownership with multiple clients have not yet passed gameplay acceptance.
 
-## Konfiguration im Panel
+## Configuration in the panel
 
-Die laufenden Einstellungen liegen im Servervolume, unter `server/`. `defaults/` im Repository wird nur für neue Installationen verwendet. Vor Änderungen eine Kopie der betreffenden Datei sichern.
+Live settings are stored under `server/` in the server volume. The repository's `defaults/` directory is used only to initialize missing configuration files. Back up the relevant file before editing it.
 
-| Datei | Einstellungen |
-|---|---|
-| `server/da.ini` | Dragonade, Coop-Funktionen, Spawn-Schutz, GameSpy-Abfrage |
-| `server/data/svrcfg_cnc.ini` | `bGameTitle`, `MaxPlayers`, `StartingCredits`, Spielpasswort, Spielregeln |
-| `server/tt.cfg` | Rotation, Kartendefinitionen und TT-Downloads |
-| `server/server.ini` | Spielport, Netzwerkeinstellungen, `ResumeRotation` |
-| `server/data/paths.ini` | Interne Datenverzeichnisse; bei Umbenennung auch TTFS-Dateien kopieren |
+| File | Settings |
+| --- | --- |
+| `server/da.ini` | Dragonade, coop features, spawn protection, GameSpy queries |
+| `server/data/svrcfg_cnc.ini` | `bGameTitle`, `MaxPlayers`, `StartingCredits`, game password, game rules |
+| `server/tt.cfg` | Rotation, map definitions and TT downloads |
+| `server/server.ini` | Game port, network settings, `ResumeRotation` |
+| `server/data/paths.ini` | Internal data directories; also migrate TTFS files when renaming them |
 
-Coop-Werte in `[General]` der `server/da.ini`:
+Coop settings in the `[General]` section of `server/da.ini`:
 
-| Schlüssel | Standard | Bedeutung |
-|---|---:|---|
-| `CampaignSharedKeys` | `1` | Gemeinsamer Schlüsselbesitz |
-| `CampaignWeaponRespawnSeconds` | `15` | Wiedererscheinen fester Waffen; `0` deaktiviert es |
-| `CampaignKeyRespawnSeconds` | `5` | Wiedererscheinen fester Schlüsselkarten; `0` deaktiviert es |
-| `CampaignTerminals` | `1` | Kaufkonsolen aktivieren |
-| `CampaignTerminalSpacing` | `75` | Mindestabstand zwischen Konsolen an Waffenfundstellen |
-| `CampaignTerminalModel` | `o_nod_console-o` | Vorhandenes Konsolenmodell |
-| `CampaignAdminName` | leer | Name, der eine Admin-Freigabe anfordern darf |
+| Key | Default | Meaning |
+| --- | ---: | --- |
+| `CampaignSharedKeys` | `1` | Shared key ownership |
+| `CampaignWeaponRespawnSeconds` | `15` | Fixed weapon respawn delay; `0` disables replenishment |
+| `CampaignKeyRespawnSeconds` | `5` | Fixed keycard respawn delay; `0` disables replenishment |
+| `CampaignTerminals` | `1` | Enable purchase terminals |
+| `CampaignTerminalSpacing` | `75` | Minimum spacing between terminals at weapon locations |
+| `CampaignTerminalModel` | `o_nod_console-o` | Existing console model |
+| `CampaignAdminName` | empty | Player name allowed to request administrator approval |
 
-Dragonade unterstützt Kartenüberschreibungen in Abschnitten wie `[M06.mix]`. Konsolen und Karteninventar werden beim Kartenladen aufgebaut; nach Änderungen ist ein Kartenwechsel bzw. Serverneustart erforderlich. Adaptive Schwierigkeit ist bislang nicht implementiert.
+Dragonade supports map-specific overrides in sections such as `[M06.mix]`. Terminal placement and supply tracking are initialized for each map; change maps or restart the server after changing their settings. Adaptive difficulty has not yet been implemented.
 
-### Admin-Freigabe
+### Administrator approval
 
-Ein Name allein authentifiziert bei GameSpy/LAN keinen Administrator. `CampaignAdminName` erlaubt deshalb nur eine Anfrage: im Spiel `!admin` eingeben, dann den privat angezeigten Befehl `campaign_admin <Code>` innerhalb von fünf Minuten in der geschützten Panel-Konsole bestätigen. Die Anfrage gilt einmal und verfällt beim Verlassen; Adminrechte enden bei neuer Verbindung. Weder Passwörter noch Client-Identifikatoren werden dafür veröffentlicht. `!adminhelp` zeigt `!nextmap`, `!restartmap` und `!kick <Spieler-ID>`. Es gibt keinen Chat-Befehl zum Ausführen beliebiger Konsolenbefehle.
+A name alone does not authenticate an administrator on GameSpy/LAN. `CampaignAdminName` therefore permits only an access request: type `!admin` in-game, then confirm the privately displayed `campaign_admin <Code>` command in the authenticated panel console within five minutes. Each request is single-use and expires when the player leaves; administrator access ends when that connection ends. No passwords or client identifiers are published. `!adminhelp` lists `!nextmap`, `!restartmap` and `!kick <player-ID>`. There is no chat command for executing arbitrary console commands.
 
-Die Portierung verwendet die Spawner-Schnittstelle der festgelegten FDS-Version. Der Installer lehnt andere Executable-Hashes ab. Ein Upgrade von TT/Dragonade benötigt eine erneute Prüfung der Schnittstellen.
+The port uses the spawner interface of the pinned FDS version. The installer rejects other executable hashes. Upgrading TT/Dragonade requires another compatibility review of those interfaces.
 
-## Lokal bauen
+## Building locally
 
-Python 3.11+ und eine Visual-Studio-x86-Entwicklungsumgebung:
+Requires Python 3.11+ and a Visual Studio x86 developer environment:
 
 ```powershell
 python tools/fetch_inputs.py --work build/inputs --only dragonade
@@ -155,8 +155,8 @@ python -m unittest discover -s tests -v
 docker build -t renegade-campaign-coop:local .
 ```
 
-Die Importbibliotheken entstehen aus den exakten Release-DLL-Exports. Der Installer arbeitet ohne zusätzliche Python-Pakete. `tools/prepare_bundle.py` kann auch ein vollständiges lokales Uploadpaket aus den vorhandenen Eingaben erzeugen; `--help` zeigt die Parameter. Lokale Pakete und Spieldaten nicht ins Repository aufnehmen.
+Import libraries are generated from the exact release DLL exports. The installer requires no additional Python packages. `tools/prepare_bundle.py` can also create a complete local upload bundle from existing inputs; use `--help` to see its parameters. Do not commit local bundles or game assets to the repository.
 
-## Quellen und Lizenz
+## Sources and licensing
 
-Hosting-/Installer-Code: GPL-2.0-or-later (`COPYING`). Das kombinierte Missionsplugin mit den angepassten EA-Controllern: GPL-3.0-or-later (`COPYING.plugin` einschließlich EA-Zusatzbedingungen). Siehe `THIRD_PARTY.txt`. Die Lizenz erteilt keine zusätzlichen Rechte an den ursprünglichen Spielassets. Quellen: [TT](https://tiberiantechnologies.org/downloads), [Dragonade](https://github.com/TheUnstoppable/Dragonade), [CoopBeta](https://multiplayerforums.com/files/file/9-coopbeta/), [EA-Renegade-Quellcode](https://github.com/electronicarts/CnC_Renegade). Versionen und Prüfsummen sind in `sources.lock.json` dokumentiert.
+Hosting/installer code: GPL-2.0-or-later (`COPYING`). The combined mission plugin, including the adapted EA controllers: GPL-3.0-or-later (`COPYING.plugin`, including EA's additional terms). See `THIRD_PARTY.txt`. These licenses do not grant additional rights to the original game assets. Sources: [TT](https://tiberiantechnologies.org/downloads), [Dragonade](https://github.com/TheUnstoppable/Dragonade), [CoopBeta](https://multiplayerforums.com/files/file/9-coopbeta/), [EA Renegade source code](https://github.com/electronicarts/CnC_Renegade). Versions and checksums are documented in `sources.lock.json`.
