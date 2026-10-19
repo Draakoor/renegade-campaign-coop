@@ -48,7 +48,14 @@ jobs:
           $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
           if (!$vs) { throw 'MSVC installation not found' }
           $vcvars = Join-Path $vs 'VC\Auxiliary\Build\vcvars32.bat'
-          & cmd.exe /d /s /c "`"`"$vcvars`" && python tools/build_plugin.py --dragonade build/inputs/da --output build/plugin`""
+          @(
+            '@echo off'
+            "call `"$vcvars`""
+            'if errorlevel 1 exit /b %errorlevel%'
+            'python tools/build_plugin.py --dragonade build/inputs/da --output build/plugin'
+            'exit /b %errorlevel%'
+          ) | Set-Content build/plugin-build.cmd -Encoding ascii
+          & cmd.exe /d /c build\plugin-build.cmd
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
