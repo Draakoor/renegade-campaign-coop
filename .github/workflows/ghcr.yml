@@ -87,6 +87,8 @@ jobs:
         id: meta
         with:
           images: ${{ steps.image.outputs.name }}
+          labels: |
+            org.opencontainers.image.licenses=GPL-2.0-or-later
           flavor: latest=false
           tags: |
             type=ref,event=branch
@@ -108,7 +110,7 @@ jobs:
         shell: bash
         run: |
           docker run --rm renegade-coop:ci wine --version
-          docker run --rm renegade-coop:ci python3 -c 'import pathlib,sys; sys.path.insert(0,"/opt/renegade-coop"); import runtime; p=pathlib.Path("/opt/renegade-coop/artifacts/da_campaign.dll"); assert p.read_bytes()[:2]==b"MZ"; assert runtime.ROOT==pathlib.Path("/home/container")'
+          docker run --rm renegade-coop:ci python3 -c 'import os,pathlib,sys; sys.path.insert(0,"/opt/renegade-coop"); import runtime; p=pathlib.Path("/opt/renegade-coop/artifacts/da_campaign.dll"); assert p.read_bytes()[:2]==b"MZ"; assert runtime.ROOT==pathlib.Path("/home/container"); assert os.getuid()==1000; (runtime.ROOT/"write-check").write_text("ok")'
           set +e
           docker run --rm renegade-coop:ci > missing-assets.log 2>&1
           code=$?

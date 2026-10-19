@@ -9,6 +9,10 @@ LABEL org.opencontainers.image.title="Renegade Campaign Coop development runtime
       org.opencontainers.image.licenses="GPL-2.0-or-later"
 
 USER root
+RUN groupadd --gid 1000 container \
+    && useradd --uid 1000 --gid container --home-dir /home/container --shell /bin/bash --no-create-home container \
+    && mkdir -p /home/container \
+    && chown container:container /home/container
 WORKDIR /opt/renegade-coop
 COPY bootstrap.py runtime.py volume_lock.py sources.lock.json COPYING THIRD_PARTY.txt ./
 COPY defaults/ defaults/
