@@ -81,7 +81,7 @@ Der Installer prüft alle Release-Dateien, sichert ersetzte Binärdateien/Assets
 - Öffentliche Master-Heartbeats, Listensichtbarkeit und Listenbeitritt fehlen. Der DA-Heartbeat-Timer muss vor Freigabe an das [aktuelle TT-Protokoll](https://tiberiantechnologies.org/Docs/?page=GameSpy%20Protocol%20and%20New%20Broadcaster) angepasst werden.
 - Lokal geprüft: Laden aller drei Karten, ursprüngliche Startpunkte, Wiederherstellung von 45/41/119 NPCs (M06/M07/M09), Dead6/Mobius/Sydney inklusive Skripten, Kartenwechsel, Neuladen und Missionsneustart nach Mobius-Tod. [Technischer Prüfbericht](validation/native-2026-10-19.json). Diese Diagnosen hatten **null echte Clients**.
 - Der Betreiber kann zunächst allein testen. Ein vollständiger Solo-Durchlauf aller Missionen, echte Mehrspieler-Beitritte, Sequenzen und der Lasttest mit acht Clients sind noch offen. Die Veröffentlichung des Codes ist keine öffentliche Spielfreigabe.
-- `ResumeRotation=true` ist gesetzt; bisher nur im Tutorial geprüft. Kein persistenter Checkpoint-Spielstand.
+- `ResumeRotation=true` ist gesetzt. Der Supervisor korrigiert den beim Beenden vorgerückten FDS-Rotationsindex anhand der zuletzt geladenen Karte; die Mission beginnt nach dem Neustart wieder von vorn. Kein persistenter Checkpoint-Spielstand.
 - `RELEASE_MODE=development` bleibt gesetzt. Das Ändern der Variable allein schaltet keinen öffentlichen Betrieb frei.
 
 ## Missionen lokal prüfen und bestehende Volumes aktualisieren

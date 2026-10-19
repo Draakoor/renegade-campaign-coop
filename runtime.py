@@ -4,6 +4,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import subprocess
 import sys
@@ -62,6 +63,32 @@ def append_command(server, command):
         out.write(command + '\n')
 
 
+def resume_active_mission(server):
+    """FDS advances resumerotation.txt during quit; restore the last loaded map."""
+    settings = configparser.ConfigParser(interpolation=None)
+    settings.read(server / 'server.ini')
+    if not settings.getboolean('Server', 'ResumeRotation', fallback=False):
+        return
+    active = server / 'active-map.txt'
+    if not active.exists():
+        return
+    match = re.search(r'^\s*rotation\s*:\s*(\[[^\]]*\])\s*;',
+                      (server / 'tt.cfg').read_text(encoding='utf-8'), re.MULTILINE)
+    if not match:
+        raise RuntimeError('Cannot resume mission: tt.cfg needs an explicit rotation array.')
+    rotation = json.loads(match.group(1))
+    if not rotation or any(not isinstance(name, str) for name in rotation):
+        raise RuntimeError('Cannot resume mission: invalid rotation.')
+    previous = active.read_text(encoding='utf-8').strip().casefold().removesuffix('.mix')
+    names = [name.casefold().removesuffix('.mix') for name in rotation]
+    index = names.index(previous) if previous in names else 0
+    target = server / 'resumerotation.txt'
+    temporary = server / 'resumerotation.tmp'
+    temporary.write_text(str(index) + '\n', encoding='ascii')
+    os.replace(temporary, target)
+    print(f'[Supervisor] Resuming {rotation[index]} from its beginning (rotation position {index}).', flush=True)
+
+
 def main():
     with volume_lock(ROOT):
         return run_locked()
@@ -90,6 +117,7 @@ def run_locked():
         raise RuntimeError('Development server requires its generated test password.')
     if da.get('General', 'GameSpyMasterServers') != '127.0.0.1':
         raise RuntimeError('Development server must remain unlisted.')
+    resume_active_mission(server)
     stopping = threading.Event()
     stopped_at = [None]
     proc = None
