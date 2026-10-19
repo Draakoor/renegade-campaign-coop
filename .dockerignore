@@ -4,6 +4,7 @@
 !docker/**
 !bootstrap.py
 !runtime.py
+!gamespy.py
 !volume_lock.py
 !sources.lock.json
 !COPYING

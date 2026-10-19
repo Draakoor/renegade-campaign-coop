@@ -62,7 +62,7 @@ def install(root=ROOT, lock_held=False):
             content = content.replace('GENERATE_AT_INSTALL', secrets.token_hex(12))
             dst.write_text(content, encoding='utf-8')
     (root / 'installed.json').write_text(json.dumps(manifest, indent=2), encoding='utf-8')
-    print('Release installed. Existing settings preserved. Public release remains disabled.', flush=True)
+    print('Release installed. Existing settings and publication mode preserved.', flush=True)
 
 
 if __name__ == '__main__':

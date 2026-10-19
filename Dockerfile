@@ -14,7 +14,7 @@ RUN groupadd --gid 1000 container \
     && mkdir -p /home/container \
     && chown container:container /home/container
 WORKDIR /opt/renegade-coop
-COPY bootstrap.py runtime.py volume_lock.py sources.lock.json COPYING COPYING.plugin THIRD_PARTY.txt ./
+COPY bootstrap.py runtime.py gamespy.py volume_lock.py sources.lock.json COPYING COPYING.plugin THIRD_PARTY.txt ./
 COPY defaults/ defaults/
 COPY tools/*.py tools/
 COPY plugin/ plugin/

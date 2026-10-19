@@ -12,6 +12,7 @@ import threading
 import time
 from urllib.parse import unquote, urlsplit
 from volume_lock import volume_lock
+from gamespy import broadcast, publication_mode, validate_settings
 
 ROOT = Path(os.environ.get('RENEGADE_ROOT', Path(__file__).resolve().parent)).resolve()
 MAPS = ['M00_Tutorial'] + [f'M{i:02d}' for i in range(1, 12)]
@@ -104,19 +105,15 @@ def run_locked():
         from bootstrap import install
         install(ROOT, lock_held=True)
     server = ROOT / 'server'
-    mode = os.environ.get('RELEASE_MODE', 'development')
-    if mode != 'development':
-        # Public enablement is a separate operation after all acceptance tests.
+    mode = publication_mode(ROOT)
+    if os.environ.get('RELEASE_MODE', 'development') != 'development':
         check_validation(ROOT)
         raise RuntimeError('Release validation passed; apply the reviewed public configuration before publishing.')
     cfg = configparser.ConfigParser(interpolation=None)
     cfg.read(server / 'data' / 'svrcfg_cnc.ini')
     da = configparser.ConfigParser(interpolation=None)
     da.read(server / 'da.ini')
-    if not cfg.getboolean('Settings', 'IsPassworded') or not cfg.get('Settings', 'bPassword'):
-        raise RuntimeError('Development server requires its generated test password.')
-    if da.get('General', 'GameSpyMasterServers') != '127.0.0.1':
-        raise RuntimeError('Development server must remain unlisted.')
+    validate_settings(mode, cfg, da)
     resume_active_mission(server)
     stopping = threading.Event()
     stopped_at = [None]
@@ -153,7 +150,10 @@ def run_locked():
         with (ROOT / 'wine.log').open('ab') as wine_log:
             proc = subprocess.Popen(['wine', 'server.exe'], cwd=server, env=env,
                                     stdin=subprocess.DEVNULL, stdout=wine_log, stderr=subprocess.STDOUT)
-            print('[Supervisor] Renegade starting in private validation mode.', flush=True)
+            print(f'[Supervisor] Renegade starting in {mode} mode.', flush=True)
+            if mode == 'public-test':
+                print('[GameSpy] Public test enabled; campaign acceptance remains pending. Heartbeat interval: 25 seconds.', flush=True)
+                threading.Thread(target=broadcast, args=(stopping,), daemon=True).start()
 
             def read_console():
                 for line in sys.stdin:
@@ -181,6 +181,7 @@ def run_locked():
             print(f'[Supervisor] Renegade exited: {proc.returncode}', flush=True)
             return 0 if stopping.is_set() else proc.returncode or 1
     finally:
+        stopping.set()
         if http:
             http.shutdown()
             http.server_close()

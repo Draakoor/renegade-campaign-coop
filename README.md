@@ -4,7 +4,7 @@
 
 Pterodactyl-/Docker-Entwicklungsumgebung für C&C Renegade: **TT 4.8.4, Dragonade 1.11.1, Wine, 8 Spieler**.
 
-**M06, M07 und M09 enthalten jetzt eigene Coop-Anpassungen; vollständige Spieltests stehen noch aus.** Neu aufgebaute Volumes enthalten die private Testrotation Tutorial → M01–M11. Bestehende Volumes behalten ihre Einstellungen und benötigen das unten beschriebene Update. Der Server startet passwortgeschützt und ohne öffentliche GameSpy-Heartbeats. Das öffentliche Repository und Image stellen den Entwicklungsstand bereit; sie bedeuten keine Freigabe der Kampagne.
+**M06, M07 und M09 enthalten jetzt eigene Coop-Anpassungen; vollständige Spieltests stehen noch aus.** Neu aufgebaute Volumes enthalten die private Testrotation Tutorial → M01–M11. Bestehende Volumes behalten ihre Einstellungen und benötigen das unten beschriebene Update. Neue Volumes starten passwortgeschützt und ohne öffentliche GameSpy-Heartbeats. Ein Betreiber kann den unten beschriebenen öffentlichen Testbetrieb ausdrücklich aktivieren. Das öffentliche Repository und Image stellen den Entwicklungsstand bereit; sie bedeuten keine Freigabe der Kampagne.
 
 ## Image und Workflow
 
@@ -57,6 +57,18 @@ Die Konsole wird über eine Datei im Volume an das Plugin übergeben. `daver` ze
 
 Ein bereits aufgebautes `bundle-dev-004`-Volume kann weiterverwendet werden. Vor einem Imagewechsel den Server stoppen und sichern; `installed.json`, `server/`, `.wine/`, `defaults/` und `validation.json` erhalten. Ein noch vorhandenes altes `runtime.lock` erst nach bestätigtem Ende des alten Prozesses untersuchen. Das neue Image nutzt eine stabile Dateisperre, die nach einem Prozessabbruch wieder freigegeben wird.
 
+## Öffentlicher Testbetrieb
+
+Der Betreiber kann die unvollständig getestete Kampagne ausdrücklich für öffentliche Tests freigeben. Dazu den Server stoppen und im Volume ausführen (im Image liegt das Werkzeug unter `/opt/renegade-coop/tools/set_public.py`):
+
+```sh
+python3 /opt/renegade-coop/tools/set_public.py --root /home/container --mode public-test
+```
+
+Anschließend normal starten. Das Werkzeug sichert die bestehenden Einstellungen unter `backups/publication-<UTC>/`, deaktiviert das Spielpasswort und künstliche Missionsdiagnosen und schreibt `publication.json`. Das bisherige Testkennwort bleibt für eine Rückkehr zum privaten Betrieb erhalten; es wird weder angekündigt noch protokolliert. `validation.json`, Rotation und Missionsfortschritt werden nicht verändert. Mit `--mode development` bei gestopptem Server wieder privat schalten.
+
+Der Supervisor kündigt UDP 35001 erst an, wenn Dragonade auf Abfragen antwortet. Ausgehend muss UDP 27900 erreichbar sein. Er nutzt alle sieben von TT dokumentierten Community-Master und einen 25-Sekunden-Timer unabhängig von pausierter Spielzeit. Beim Stoppen enden die Heartbeats; Listeneinträge verfallen beim Master. `Public campaign test - mission playtests pending` und `Validation=pending` kennzeichnen die noch offene Abnahme.
+
 ## Persistenz und Updates
 
 `/home/container` ist das Servervolume. Es enthält `server/`, `.wine/`, das geprüfte `release/`, `validation.json` und Sicherungen. Laufende Einstellungen werden nicht automatisch überschrieben. Ein geänderter Image-Tag aktualisiert einen bereits installierten Spielserver **nicht** heimlich; für Änderungen am Plugin bzw. Spielserver einen neuen geprüften Release-Baum bereitstellen und bei gestopptem Server installieren:
@@ -78,11 +90,11 @@ Der Installer prüft alle Release-Dateien, sichert ersetzte Binärdateien/Assets
 - Die Original-LVL-Dateien liefern Positionen und Skripte fehlender NPCs. Der Installer erzeugt daraus private `.wcm`-Tabellen; das Plugin stellt die vom FDS ausgelassenen platzierten Soldaten wieder her. Original-Leveldateien bleiben unverändert. Die drei Karten nutzen ihre Original-Spielassets plus das bestehende CoopContent-Paket.
 - Der Legacy-`!goto`-Befehl ist noch nicht portiert.
 - Die DA-Abfrage meldet durch einen Upstream-Factory-Test derzeit `TC=1`, obwohl Konfiguration und Plugin Teamwechsel sperren. Mit echten Clients prüfen und die Anzeige korrigieren.
-- Öffentliche Master-Heartbeats, Listensichtbarkeit und Listenbeitritt fehlen. Der DA-Heartbeat-Timer muss vor Freigabe an das [aktuelle TT-Protokoll](https://tiberiantechnologies.org/Docs/?page=GameSpy%20Protocol%20and%20New%20Broadcaster) angepasst werden.
+- Der Supervisor sendet im öffentlichen Testbetrieb alle 25 Sekunden Heartbeats gemäß [TT-Protokoll](https://tiberiantechnologies.org/Docs/?page=GameSpy%20Protocol%20and%20New%20Broadcaster). Dragonade beantwortet weiterhin die UDP-Abfragen; sein alter Heartbeat bleibt auf localhost begrenzt. Ein erfolgreicher Master meldet `heartbeatresult=0`. Ein echter Listenbeitritt muss separat geprüft werden.
 - Lokal geprüft: Laden aller drei Karten, ursprüngliche Startpunkte, Wiederherstellung von 45/41/119 NPCs (M06/M07/M09), Dead6/Mobius/Sydney inklusive Skripten, Kartenwechsel, Neuladen und Missionsneustart nach Mobius-Tod. [Technischer Prüfbericht](validation/native-2026-10-19.json). Diese Diagnosen hatten **null echte Clients**.
-- Der Betreiber kann zunächst allein testen. Ein vollständiger Solo-Durchlauf aller Missionen, echte Mehrspieler-Beitritte, Sequenzen und der Lasttest mit acht Clients sind noch offen. Die Veröffentlichung des Codes ist keine öffentliche Spielfreigabe.
+- Der Betreiber kann zunächst allein testen. Ein vollständiger Solo-Durchlauf aller Missionen, echte Mehrspieler-Beitritte, Sequenzen und der Lasttest mit acht Clients sind noch offen. Öffentlicher Testbetrieb gilt nicht als bestandene Kampagnenabnahme.
 - `ResumeRotation=true` ist gesetzt. Der Supervisor korrigiert den beim Beenden vorgerückten FDS-Rotationsindex anhand der zuletzt geladenen Karte; die Mission beginnt nach dem Neustart wieder von vorn. Kein persistenter Checkpoint-Spielstand.
-- `RELEASE_MODE=development` bleibt gesetzt. Das Ändern der Variable allein schaltet keinen öffentlichen Betrieb frei.
+- `RELEASE_MODE=development` bleibt gesetzt. Öffentlicher Testbetrieb wird ausschließlich durch die gesicherte Konfigurationsänderung und `publication.json` gewählt.
 
 ## Missionen lokal prüfen und bestehende Volumes aktualisieren
 
