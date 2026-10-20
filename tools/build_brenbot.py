@@ -49,6 +49,13 @@ def build(output, archive=None):
     main.write_text(content)
     commands = output / 'commands.pm'
     commands.write_text(commands.read_text().replace("ForceArray => [ 'group' ]", "ForceArray => [ 'group', 'command' ]", 1))
+    config = output / 'brconfig.pm'
+    content, count = re.subn(r'  if \( \(\$\^O ne "MSWin32"\) \)\n  \{.*?does not support the LFDS.*?\n  \}',
+                            '  # Novara: Linux Perl talks to the Windows FDS under Wine through local files.',
+                            config.read_text(), count=1, flags=re.DOTALL)
+    if count != 1:
+        raise ValueError('Pinned BRenBot OS guard changed')
+    config.write_text(content)
     # Unified help and gameplay commands have exactly one owner. Retain the
     # upstream version implementation; its privileged commands are absent.
     tree = ET.parse(output / 'commands.xml')

@@ -4,6 +4,9 @@
 !docker/**
 !bootstrap.py
 !runtime.py
+!brenbot_runtime.py
+!brenbot/
+!brenbot/**
 !gamespy.py
 !volume_lock.py
 !sources.lock.json

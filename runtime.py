@@ -202,8 +202,13 @@ def run_locked():
                         bot_retry_at = time.monotonic() + 10
                     if bot is None and bot_restarts < 3 and time.monotonic() >= bot_retry_at:
                         from brenbot_runtime import start as start_bot
-                        bot = start_bot(ROOT)
-                        threading.Thread(target=bot_output, args=(bot,), daemon=True).start()
+                        try:
+                            bot = start_bot(ROOT)
+                            threading.Thread(target=bot_output, args=(bot,), daemon=True).start()
+                        except (OSError, RuntimeError) as exc:
+                            print(f'[BRenBot] Cannot start: {exc}', flush=True)
+                            bot_restarts += 1
+                            bot_retry_at = time.monotonic() + 10
                     if bot_restarts == 3:
                         print('[BRenBot] Repeated startup failure; game stays online. Check bot configuration.', flush=True)
                         bot_restarts += 1

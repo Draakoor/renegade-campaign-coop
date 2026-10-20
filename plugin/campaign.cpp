@@ -34,7 +34,13 @@ static void AuditMap() {
         auto* obj=n->Data()->As_ScriptableGameObj(); if (!obj) continue;
         const auto pos=Commands->Get_Position(obj);
         fprintf(out,"object\t%d\t%s\t%.3f\t%.3f\t%.3f",Commands->Get_ID(obj),Commands->Get_Preset_Name(obj),pos.X,pos.Y,pos.Z);
-        if (auto* physical=obj->As_PhysicalGameObj()) fprintf(out,"\tmodel=%s",Get_Model(physical));
+        if (auto* physical=obj->As_PhysicalGameObj()) {
+            fprintf(out,"\tmodel=%s\tfacing=%.3f",Get_Model(physical),Commands->Get_Facing(obj));
+            if (auto* model=physical->Peek_Physical_Object()->Peek_Model()) {
+                AABoxClass box; model->Get_Obj_Space_Bounding_Box(box);
+                fprintf(out,"\tbounds=%.3f,%.3f,%.3f;%.3f,%.3f,%.3f",box.Center.X,box.Center.Y,box.Center.Z,box.Extent.X,box.Extent.Y,box.Extent.Z);
+            }
+        }
         if (auto* zone=obj->As_ScriptZoneGameObj()) {
             const auto& box=zone->Get_Bounding_Box();
             fprintf(out,"\tzone=%s\textent=%.3f,%.3f,%.3f",zone->Get_Definition().ModelName.Peek_Buffer(),box.Extent.X,box.Extent.Y,box.Extent.Z);
