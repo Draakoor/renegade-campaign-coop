@@ -255,6 +255,7 @@ def test(core):
             assert 'TEST: BRenBot attempted' not in ''.join(log)
             assert 'Error' not in ''.join(log), ''.join(log)
             assert 'failed' not in ''.join(log).lower(), ''.join(log)
+            assert 'Unloading plugin' not in ''.join(log), ''.join(log)
             # Re-running setup preserves operator configuration and bot state.
             custom = (work / 'funsounds.json').read_bytes()
             prepare(root, core)

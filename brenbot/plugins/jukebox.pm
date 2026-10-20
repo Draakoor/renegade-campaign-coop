@@ -20,6 +20,7 @@ sub start {
     }
     print '[Jukebox] Loaded '.scalar(@tracks)." original Renegade tracks; personal playback.\n";
     $_[KERNEL]->delay('tick', 1);
+    return 1; # BRenBot treats a zero timer return value as failed startup.
 }
 sub forget { delete $state{$_[0]}; }
 sub enabled { return grep { !exists($config{$_->{file}}) || $config{$_->{file}} } @tracks; }
