@@ -144,6 +144,8 @@ The image fetches official BRenBot at the commit and SHA256 in `sources.lock.jso
 
 Persistent bot configuration is in `brenbot/brenbot.cfg`, `brenbot/funsounds.json` and `brenbot/plugins/funsounds.xml`. SQLite state is in `brenbot/brenbot.dat`. Startup preserves these settings. Managed Perl plugin source and `commands.xml` update from the image with backups. Do not enable nickname-only bot moderators; `!admin` plus panel confirmation remains authoritative. Bot output appears in the panel as `[BRenBot]`. A failed bot retries twice without taking down the game.
 
+The [integration report](validation/brenbot-coop-2026-10-20.json) records all eleven map probes, original station/teleport counts, and the BRenBot checks run in GitHub Actions. Migrating an existing volume requires the new image plus an update package made with `tools/make_plugin_update.py --brenbot-migration`. That explicit migration backs up files, updates the supervisor/plugin, selects M01–M11, removes obsolete scaling settings and disables conflicting Dragonade commands while preserving other operator settings.
+
 M06/M07/M09 checkpoint portals use the original `Marker Flag`, `Simple_Sydney_SandM_Wall` and `TDA_Teleport_Zone`, verified against CoopBeta M01. Completing a checkpoint creates a portal near the previous reached location and retargets earlier portals to the latest checkpoint. Portal sites require level ground, a clear walking path and space for the full laser frame. In low rooms the same wall asset is rotated in its plane to fit below the ceiling. A location without enough space is logged and leaves `!cp` available. No future objectives are unlocked by the portals. Real client crossing and visual placement still need verification.
 
 ## Configuration in the panel

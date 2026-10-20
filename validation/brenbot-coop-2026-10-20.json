@@ -1,0 +1,180 @@
+{
+  "date": "2026-10-20",
+  "environment": "Private Windows x86 FDS, TT 4.8.4 / Dragonade 1.11.1",
+  "human_clients": 0,
+  "source_commit": "69428a6",
+  "native_plugin_sha256": "1bb52eb19706a55468ad8dc77c875f46495947dd294b9398d33593dc85429267",
+  "map_probes": [
+    {
+      "map": "M01",
+      "skins": "[Novara] DIAGNOSTIC features result=PASS skins=76 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+    },
+    {
+      "map": "M02",
+      "skins": "[Novara] DIAGNOSTIC features result=PASS skins=76 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+    },
+    {
+      "map": "M03",
+      "skins": "[Novara] DIAGNOSTIC features result=PASS skins=76 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+    },
+    {
+      "map": "M04",
+      "skins": "[Novara] DIAGNOSTIC features result=PASS skins=76 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+    },
+    {
+      "map": "M05",
+      "skins": "[Novara] DIAGNOSTIC features result=PASS skins=76 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+    },
+    {
+      "map": "M06",
+      "skins": "[Novara] DIAGNOSTIC features result=PASS skins=76 checkpoint=1 moved=1 distance=0.019; synthetic actor, no human playtest.",
+      "armor": [
+        "[Campaign] DIAGNOSTIC armor before=200.0 legacy_after_hit=200.0 preserved=1 skin=SkinFlesh armor=ShieldKevlar",
+        "[Campaign] DIAGNOSTIC armor fixed_after_hit=100.0 lethal=1 result=PASS; synthetic actor, no human playtest."
+      ],
+      "portal": [
+        "[Novara] CoopBeta-style checkpoint portal -98.58,-136.30,3.74 -> -101.26,-142.77,4.96 low_room=0",
+        "[Novara] DIAGNOSTIC portal result=PASS; original assets and TDA script, no client crossing test."
+      ],
+      "supplies": [
+        "[Novara] DIAGNOSTIC simulated_collection=POW_MineRemote_Player tracked=1",
+        "[Novara] DIAGNOSTIC runtime_drop_excluded=1",
+        "[Novara] Coop terminal at -101.26,-137.77,3.92",
+        "[Novara] DIAGNOSTIC terminal_objects=1 available_characters=23",
+        "[Novara] Fixed weapon respawned: POW_MineRemote_Player",
+        "[Novara] DIAGNOSTIC resupply POW_MineRemote_Player restored=1 original=109620 current=1500000159 alive=1 pending=0 distance=0.000",
+        "[Novara] DIAGNOSTIC resupply result=PASS; synthetic actor, no client/menu playtest."
+      ]
+    },
+    {
+      "map": "M07",
+      "skins": "[Novara] DIAGNOSTIC features result=PASS skins=76 checkpoint=1 moved=1 distance=0.276; synthetic actor, no human playtest.",
+      "armor": [
+        "[Campaign] DIAGNOSTIC armor before=200.0 legacy_after_hit=200.0 preserved=1 skin=SkinFlesh armor=ShieldKevlar",
+        "[Campaign] DIAGNOSTIC armor fixed_after_hit=100.0 lethal=1 result=PASS; synthetic actor, no human playtest."
+      ],
+      "portal": [
+        "[Novara] CoopBeta-style checkpoint portal -172.23,156.64,29.97 -> -172.23,147.64,30.25 low_room=1",
+        "[Novara] DIAGNOSTIC portal result=PASS; original assets and TDA script, no client crossing test."
+      ],
+      "supplies": [
+        "[Novara] DIAGNOSTIC simulated_collection=POW_Nuclear_Missle_Beacon tracked=1",
+        "[Novara] DIAGNOSTIC runtime_drop_excluded=1",
+        "[Novara] Coop terminal at -172.23,154.14,29.97",
+        "[Novara] DIAGNOSTIC terminal_objects=1 available_characters=23",
+        "[Novara] Fixed weapon respawned: POW_Nuclear_Missle_Beacon",
+        "[Novara] DIAGNOSTIC resupply POW_Nuclear_Missle_Beacon restored=1 original=126507 current=1500000218 alive=1 pending=0 distance=0.000",
+        "[Novara] DIAGNOSTIC resupply result=PASS; synthetic actor, no client/menu playtest."
+      ]
+    },
+    {
+      "map": "M08",
+      "skins": "[Novara] DIAGNOSTIC features result=PASS skins=76 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+    },
+    {
+      "map": "M09",
+      "skins": "[Novara] DIAGNOSTIC features result=PASS skins=76 checkpoint=1 moved=1 distance=0.001; synthetic actor, no human playtest.",
+      "armor": [
+        "[Campaign] DIAGNOSTIC armor before=200.0 legacy_after_hit=200.0 preserved=1 skin=SkinFlesh armor=ShieldKevlar",
+        "[Campaign] DIAGNOSTIC armor fixed_after_hit=100.0 lethal=1 result=PASS; synthetic actor, no human playtest."
+      ],
+      "portal": [
+        "[Novara] CoopBeta-style checkpoint portal -130.39,491.24,-189.63 -> -126.85,487.70,-189.63 low_room=0",
+        "[Novara] DIAGNOSTIC portal result=PASS; original assets and TDA script, no client crossing test."
+      ],
+      "supplies": [
+        "[Novara] DIAGNOSTIC simulated_collection=POW_Chaingun_Player tracked=1",
+        "[Novara] DIAGNOSTIC simulated_collection=Level_01_Keycard tracked=1",
+        "[Novara] DIAGNOSTIC runtime_drop_excluded=1",
+        "[Novara] Coop terminal at -123.35,487.70,-189.63",
+        "[Novara] DIAGNOSTIC terminal_objects=1 available_characters=23",
+        "[Novara] Fixed key respawned: Level_01_Keycard",
+        "[Novara] Fixed weapon respawned: POW_Chaingun_Player",
+        "[Novara] DIAGNOSTIC resupply POW_Chaingun_Player restored=1 original=1101323 current=1500000272 alive=1 pending=0 distance=0.000",
+        "[Novara] DIAGNOSTIC resupply Level_01_Keycard restored=1 original=2005241 current=1500000230 alive=1 pending=0 distance=0.000",
+        "[Novara] DIAGNOSTIC resupply result=PASS; synthetic actor, no client/menu playtest."
+      ]
+    },
+    {
+      "map": "M10",
+      "skins": "[Novara] DIAGNOSTIC features result=PASS skins=76 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+    },
+    {
+      "map": "M11",
+      "skins": "[Novara] DIAGNOSTIC features result=PASS skins=76 checkpoint=0 moved=0 distance=-1.000; synthetic actor, no human playtest."
+    }
+  ],
+  "original_mod_audit": {
+    "M01": {
+      "purchase_stations": 12,
+      "teleport_scripts": 12,
+      "marker_flags": 3
+    },
+    "M02": {
+      "purchase_stations": 20,
+      "teleport_scripts": 9,
+      "marker_flags": 8
+    },
+    "M03": {
+      "purchase_stations": 8,
+      "teleport_scripts": 17,
+      "marker_flags": 1
+    },
+    "M04": {
+      "purchase_stations": 5,
+      "teleport_scripts": 0,
+      "marker_flags": 0
+    },
+    "M05": {
+      "purchase_stations": 7,
+      "teleport_scripts": 6,
+      "marker_flags": 0
+    },
+    "M08": {
+      "purchase_stations": 3,
+      "teleport_scripts": 3,
+      "marker_flags": 2
+    },
+    "M10": {
+      "purchase_stations": 4,
+      "teleport_scripts": 0,
+      "marker_flags": 0
+    },
+    "M11": {
+      "purchase_stations": 7,
+      "teleport_scripts": 1,
+      "marker_flags": 3
+    }
+  },
+  "brenbot": {
+    "version": "1.56 build 1",
+    "upstream_commit": "ed521436e653f7bdc3fed5b118402efdf2cd34f1",
+    "plugins": [
+      "funsounds",
+      "novara_coop"
+    ],
+    "sound_mappings": 49,
+    "test_workflow": "https://github.com/Draakoor/renegade-campaign-coop/actions/runs/39352320177",
+    "checks": [
+      "real Perl BRenBot and both plugins",
+      "unified help and core version",
+      "team scope and recipient mute",
+      "cooldown and reconnect reset",
+      "command isolation",
+      "operator config persistence",
+      "image test with Docker --network none"
+    ]
+  },
+  "acceptance_pending": [
+    "Real client rendering of skins and low-room laser frames",
+    "Real player portal crossing and character purchases/refill",
+    "Complete mission playthroughs and late join with real clients",
+    "Eight-client load test"
+  ],
+  "adaptive_scaling": "The additional Novara scaling was removed. The inspected original mod/map scripts did not establish general player-count scaling. Initial-load audits do not cover every later trigger.",
+  "vehicles": {
+    "engine_spawn_probe": "PASS",
+    "driveable_presets": 34,
+    "real_client_driving_test": false
+  }
+}
