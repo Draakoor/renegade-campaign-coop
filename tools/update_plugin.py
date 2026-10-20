@@ -40,6 +40,44 @@ def target(root, name):
     return result
 
 
+def migrate_campaign(root, targets):
+    """Explicit operator-requested migration; preserve unrelated configuration."""
+    maps = [f'M{i:02d}' for i in range(1, 12)]
+    for name in ('server/tt.cfg', 'defaults/tt.cfg'):
+        if not target(root, name).exists():
+            if name.startswith('defaults/'):
+                continue
+            raise ValueError('Missing live tt.cfg')
+        text = target(root, name).read_text(encoding='utf-8-sig')
+        text, count = re.subn(r'^\s*rotation\s*:\s*\[[^\]]*\]\s*;',
+                              'rotation: ' + json.dumps(maps) + ';', text, flags=re.MULTILINE)
+        if count != 1:
+            raise ValueError('Expected exactly one explicit rotation in ' + name)
+        targets[name] = text.encode()
+    for name in ('server/data/svrcfg_cnc.ini', 'defaults/data/svrcfg_cnc.ini'):
+        if not target(root, name).exists():
+            if name.startswith('defaults/'):
+                continue
+            raise ValueError('Missing live svrcfg_cnc.ini')
+        text = target(root, name).read_text(encoding='utf-8-sig')
+        text = re.sub(r'(?mi)^MapName\d*\s*=.*\n?', '', text)
+        section = re.search(r'(?ims)^\[Settings\][^\n]*\n(.*?)(?=^\[|\Z)', text)
+        if not section:
+            raise ValueError('Missing Settings section in ' + name)
+        rotation = 'MapName=M01.mix\n' + ''.join(f'MapName{i:02d}={map}.mix\n' for i, map in enumerate(maps))
+        text = text[:section.end(1)] + rotation + text[section.end(1):]
+        targets[name] = text.encode()
+    text = targets['server/da.ini'].decode()
+    obsolete = ('CampaignAdaptiveDifficulty', 'CampaignEnemyResistancePerPlayer', 'CampaignEnemyDamagePerPlayer',
+                'CampaignDifficultyUpdateSeconds', 'CampaignTerminalModel', 'CampaignTerminalSpacing')
+    for key in obsolete:
+        text = re.sub(r'(?mi)^\s*' + key + r'\s*=.*\n?', '', text)
+    for key in ('EnableChatSounds', 'EnableTaunts', 'EnableDonate'):
+        text = re.sub(r'(?mi)^\s*' + key + r'\s*=.*\n?', '', text)
+        text = add_setting(text, key, '0')
+    targets['server/da.ini'] = text.encode()
+
+
 def apply(root, payload):
     root = root.resolve()
     with volume_lock(root):
@@ -47,10 +85,14 @@ def apply(root, payload):
             raise RuntimeError('Investigate the legacy runtime lock before updating')
         with zipfile.ZipFile(payload) as archive:
             metadata = json.loads(archive.read('update.json'))
+            migration = metadata.get('migration')
+            if migration not in (None, 'novara-brenbot-m01-v1'):
+                raise ValueError('Unsupported migration')
             targets = {}
             for name, expected in metadata['files'].items():
                 target(root, name)
-                if name not in ('server/da_campaign.dll', 'release/server/da_campaign.dll') and not name.startswith(('source/', 'defaults/')):
+                runtime_file = migration == 'novara-brenbot-m01-v1' and name in ('runtime.py', 'brenbot_runtime.py')
+                if not runtime_file and name not in ('server/da_campaign.dll', 'release/server/da_campaign.dll') and not name.startswith(('source/', 'defaults/')):
                     raise ValueError('Unexpected update target: ' + name)
                 data = archive.read('files/' + name)
                 if digest(data) != expected:
@@ -76,6 +118,10 @@ def apply(root, payload):
                 raise ValueError('Invalid campaign setting')
             text = add_setting(text, key, value)
         targets['server/da.ini'] = text.encode('utf-8')
+        if migration:
+            if not all(name in targets for name in ('runtime.py', 'brenbot_runtime.py')):
+                raise ValueError('Incomplete BRenBot supervisor migration')
+            migrate_campaign(root, targets)
         changed = {name: data for name, data in targets.items()
                    if not target(root, name).exists() or target(root, name).read_bytes() != data}
         if not changed:

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
-#include "PhysicsSceneClass.h"
-#include "physcoltest.h"
+#include "coop_placement.h"
 namespace CoopPortals {
 struct Portal { int zone=0; Vector3 position; };
 static std::vector<Portal> portals;
@@ -10,37 +9,38 @@ static bool initialized=false;
 static int checkpoint=0;
 static void Loaded() { portals.clear(); initialized=false; checkpoint=0; }
 static bool Ground(Vector3& p) {
-    CastResultStruct hit;
-    hit.ComputeContactPoint=true;
-    PhysRayCollisionTestClass ray(LineSegClass(p+Vector3(0,0,2),p-Vector3(0,0,4)),&hit,DEFAULT_COLLISION_GROUP,COLLISION_TYPE_PHYSICAL);
-    ray.CheckDynamicObjs=false;
-    PhysicsSceneClass::Get_Instance()->Cast_Ray(ray);
-    if (hit.StartBad || hit.Fraction>=1 || hit.Normal.Z<.85f) return false;
-    p=hit.ContactPoint; return true;
+    return CoopPlacement::Ground(p);
 }
-static bool Site(const Vector3& origin,Vector3& ground) {
-    // Fit the complete original 4m-wide, 5m-high laser frame, not just a player.
-    for (float radius : {5.0f,7.0f,9.0f,11.0f,13.0f}) for (int i=0; i<16; ++i) {
+static bool Site(const Vector3& origin,Vector3& ground,bool& lowRoom) {
+    Vector3 floor=origin;
+    if (!Ground(floor)) { Console_Output("[Novara] Portal ground ray failed at origin.\n"); return false; }
+    int terrain=0, walk=0, sight=0, room=0;
+    // Rotate the original wall in its own plane in low rooms: 5.08m wide,
+    // 4.06m tall. Keep the complete asset above ground in either orientation.
+    for (bool low : {false,true})
+    for (float radius : {5.0f,7.0f,9.0f,11.0f,13.0f,16.0f,20.0f}) for (int i=0; i<16; ++i) {
         const float angle=i*6.2831853f/16;
-        Vector3 p=origin+Vector3(cosf(angle)*radius,sinf(angle)*radius,0);
-        if (!Ground(p) || fabsf(p.Z-origin.Z)>2) continue;
-        bool walkable=true; float last=origin.Z;
+        Vector3 p=floor+Vector3(cosf(angle)*radius,sinf(angle)*radius,0);
+        if (!Ground(p) || fabsf(p.Z-floor.Z)>2) { ++terrain; continue; }
+        bool walkable=true; float last=floor.Z;
         for (int step=1; step<=8; ++step) {
-            Vector3 sample=origin+(p-origin)*(step/8.0f);
+            Vector3 sample=floor+(p-floor)*(step/8.0f);
             if (!Ground(sample) || fabsf(sample.Z-last)>.8f) { walkable=false; break; }
             last=sample.Z;
         }
-        if (!walkable) continue;
+        if (!walkable) { ++walk; continue; }
         CastResultStruct pathHit;
-        PhysRayCollisionTestClass path(LineSegClass(origin+Vector3(0,0,1),p+Vector3(0,0,1)),&pathHit,DEFAULT_COLLISION_GROUP,COLLISION_TYPE_PHYSICAL);
+        PhysRayCollisionTestClass path(LineSegClass(floor+Vector3(0,0,1),p+Vector3(0,0,1)),&pathHit,DEFAULT_COLLISION_GROUP,COLLISION_TYPE_PHYSICAL);
         path.CheckDynamicObjs=false; PhysicsSceneClass::Get_Instance()->Cast_Ray(path);
-        if (pathHit.StartBad || pathHit.Fraction<1) continue;
-        CastResultStruct space;
-        OBBoxClass bounds(p+Vector3(0,0,2.8f),Vector3(2.2f,2.2f,2.55f),Matrix3(true));
+        if (pathHit.StartBad || pathHit.Fraction<1) { ++sight; continue; }
+        CastResultStruct space; space.ComputeContactPoint=true;
+        OBBoxClass bounds(p+Vector3(0,0,low ? 2.2f : 2.7f),Vector3(low ? 2.7f : 2.2f,low ? 2.7f : 2.2f,low ? 2.1f : 2.6f),Matrix3(true));
         PhysOBBoxCollisionTestClass box(bounds,Vector3(0,0,.01f),&space,DEFAULT_COLLISION_GROUP);
         box.CheckDynamicObjs=false; PhysicsSceneClass::Get_Instance()->Cast_OBBox(box);
-        if (!space.StartBad && space.Fraction==1) { ground=p; return true; }
+        if (!space.StartBad && space.Fraction==1) { ground=p; lowRoom=low; return true; }
+        ++room;
     }
+    Console_Output("[Novara] Portal placement rejected: terrain=%d path=%d sight=%d clearance=%d floor=%.2f.\n",terrain,walk,sight,room,floor.Z);
     return false;
 }
 static void Target(int id,const Vector3& destination) {
@@ -51,8 +51,8 @@ static void Target(int id,const Vector3& destination) {
     }
 }
 static bool Add(const Vector3& origin,const Vector3& destination) {
-    Vector3 point;
-    if (!Site(origin,point)) {
+    Vector3 point; bool lowRoom=false;
+    if (!Site(origin,point,lowRoom)) {
         Console_Output("[Novara] Checkpoint portal has no clear site near %.2f,%.2f,%.2f; !cp remains available.\n",origin.X,origin.Y,origin.Z);
         return false;
     }
@@ -64,8 +64,13 @@ static bool Add(const Vector3& origin,const Vector3& destination) {
     for (float angle : {0.0f,90.0f,180.0f}) {
         const float rad=angle*.01745329252f;
         const Vector3 normal(-sinf(rad),cosf(rad),0);
-        auto* wall=Commands->Create_Object("Simple_Sydney_SandM_Wall",point+normal*(2.03f-2.484f)+Vector3(0,0,.165f));
-        if (wall) { Commands->Set_Facing(wall,angle); props.push_back(wall); }
+        Matrix3D transform(true); transform.Rotate_Z(rad);
+        if (lowRoom) transform.Rotate_Y(1.5707963f);
+        const Vector3 modelCenter(0,2.484f,2.375f);
+        const Vector3 center=point+normal*(lowRoom ? 2.55f : 2.03f)+Vector3(0,0,lowRoom ? 2.1f : 2.54f);
+        transform.Set_Translation(center-transform.Rotate_Vector(modelCenter));
+        auto* wall=Commands->Create_Object("Simple_Sydney_SandM_Wall",transform.Get_Translation());
+        if (wall) { wall->As_PhysicalGameObj()->Set_Transform(transform); props.push_back(wall); }
     }
     OBBoxClass bounds(point+Vector3(0,0,1.7f),Vector3(1.65f,1.65f,1.65f),Matrix3(true));
     auto* zone=Create_Zone("Script_Zone_Star",bounds);
@@ -81,7 +86,7 @@ static bool Add(const Vector3& origin,const Vector3& destination) {
     }
     const int id=Commands->Get_ID(zone); Target(id,destination);
     portals.push_back({id,point});
-    Console_Output("[Novara] CoopBeta-style checkpoint portal %.2f,%.2f,%.2f -> %.2f,%.2f,%.2f\n",point.X,point.Y,point.Z,destination.X,destination.Y,destination.Z);
+    Console_Output("[Novara] CoopBeta-style checkpoint portal %.2f,%.2f,%.2f -> %.2f,%.2f,%.2f low_room=%d\n",point.X,point.Y,point.Z,destination.X,destination.Y,destination.Z,lowRoom);
     return true;
 }
 static void Tick() {

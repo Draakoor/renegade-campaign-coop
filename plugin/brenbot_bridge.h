@@ -27,6 +27,11 @@ static std::string Player(cPlayer* p) {
     return out.str();
 }
 static void Snapshot() {
+    // A bounded spool: the bot notices truncation and resumes at byte zero.
+    if (FILE* log=fopen("brenbot-events.jsonl","rb")) {
+        fseek(log,0,SEEK_END); const long size=ftell(log); fclose(log);
+        if (size>2*1024*1024) { log=fopen("brenbot-events.jsonl","wb"); if (log) fclose(log); }
+    }
     std::string row="{\"event\":\"players\",\"players\":["; bool first=true;
     for (int id=1; id<=127; ++id) if (auto* p=Find_Player(id)) if (p->Is_Active()) {
         if (!first) row+=","; first=false; row+="{"+Player(p)+"}";

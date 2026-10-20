@@ -28,3 +28,15 @@ Original Renegade assets, FDS server.dat, level source files, downloaded map
 archives, live server settings, test passwords and Wine profiles are excluded
 from Git and the published image. Obtain the required game content separately
 from its original source and supply it in the private persistent volume.
+
+BRenBot 1.56 build 1, Copyright 2003-2020 Tiberian Technologies.
+Official source: https://gitlab.com/danpaul88/brenbot
+Commit and archive checksum are pinned in sources.lock.json. Original source
+notices are retained in the image. This repository does not relicense BRenBot.
+The local adapter and replacement plugins are GPL-3.0-or-later. Funsounds uses
+the original 1.02 keyword mapping (original idea credited to zunnie), fetched
+at image build time from Plugins/funsounds. No audio files are redistributed.
+Changes: local structured-event/file transport, no IRC/network administration,
+Linux-host OS guard adjusted for Windows FDS under Wine, version-only core
+command registry, unified coop help, word matching, sound scoping/muting and
+rate limits. Perl and distribution modules retain their respective licenses.

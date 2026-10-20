@@ -8,6 +8,7 @@
 #include "SimpleGameObj.h"
 #include "SimpleGameObjDef.h"
 #include "da_chatcommand.h"
+#include "coop_placement.h"
 #include <set>
 
 namespace CoopServices {
@@ -93,9 +94,11 @@ static bool AddTerminal(const Vector3& position,float angle,float spacing) {
     for (const auto id : terminals) if (auto* obj = Commands->Find_Object(id))
         if (Commands->Get_Distance(position,Commands->Get_Position(obj)) < spacing) return false;
     if (!Campaign::state.active()) return false;
-    auto* obj = Commands->Create_Object("pct_zone_gdi",position);
+    Vector3 ground; float facing;
+    if (!CoopPlacement::Station(position,angle,ground,facing)) return false;
+    auto* obj = Commands->Create_Object("pct_zone_gdi",ground);
     if (!obj) return false;
-    Commands->Set_Facing(obj,angle); Commands->Set_Player_Type(obj,1);
+    Commands->Set_Facing(obj,facing); Commands->Set_Player_Type(obj,1);
     // Same purchase preset used by the original CoopBeta mission maps.
     obj->As_PhysicalGameObj()->Set_Collision_Group(UNCOLLIDEABLE_GROUP);
     obj->As_PhysicalGameObj()->Get_Defense_Object()->Set_Can_Object_Die(false);
@@ -103,7 +106,7 @@ static bool AddTerminal(const Vector3& position,float angle,float spacing) {
     Commands->Set_Obj_Radar_Blip_Color(obj,RADAR_BLIP_COLOR_GDI);
     Attach_Script_Once(obj,"M00_PCT_Pokable_DAK","");
     terminals.push_back(Commands->Get_ID(obj));
-    Console_Output("[Novara] Coop terminal at %.2f,%.2f,%.2f\n",position.X,position.Y,position.Z);
+    Console_Output("[Novara] Coop terminal at %.2f,%.2f,%.2f\n",ground.X,ground.Y,ground.Z);
     return true;
 }
 static void Loaded() {

@@ -134,6 +134,7 @@ def run_locked():
     bot_restarts = 0
     bot_retry_at = 0
     bridge_ready = False
+    log_tail = b''
 
     def bot_output(process):
         for line in process.stdout:
@@ -192,7 +193,8 @@ def run_locked():
                         offset = incoming.tell()
                     if data:
                         print(data.decode('cp1252', errors='replace'), end='', flush=True)
-                        bridge_ready |= b'[Novara] da_campaign loaded' in data
+                        bridge_ready |= b'[Novara] da_campaign loaded' in log_tail + data
+                        log_tail = (log_tail + data)[-64:]
                 if bridge_ready and not stopping.is_set():
                     if bot is not None and bot.poll() is not None:
                         print(f'[BRenBot] Exited: {bot.returncode}; retry in 10 seconds.', flush=True)

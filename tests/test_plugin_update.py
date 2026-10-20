@@ -27,12 +27,14 @@ class PluginUpdateTests(unittest.TestCase):
         (self.root / 'server/da.ini').write_text(self.config)
         self.payload = self.root / 'update.zip'
 
-    def package(self, extra=None, tamper=False):
+    def package(self, extra=None, tamper=False, migration=None):
         files = {'server/da_campaign.dll': self.new, 'release/server/da_campaign.dll': self.new}
         files.update(extra or {})
         meta = {'from_sha256': update.digest(self.old),
                 'files': {name: update.digest(data) for name, data in files.items()},
                 'settings': {'CampaignAdminName': '', 'CampaignCatchup': '1', 'CampaignSkins': '1'}}
+        if migration:
+            meta['migration'] = migration
         with zipfile.ZipFile(self.payload, 'w') as archive:
             archive.writestr('update.json', json.dumps(meta))
             for name, data in files.items():
@@ -68,6 +70,32 @@ class PluginUpdateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             update.apply(self.root, self.payload)
         self.assertEqual((self.root / 'release/server/da_campaign.dll').read_bytes(), self.old)
+
+    def test_explicit_brenbot_migration_removes_tutorial_and_preserves_unrelated_settings(self):
+        (self.root / 'server/da.ini').write_text(self.config + '\n[M06.mix]\nEnableChatSounds=1\nEnableTaunts=1\nEnableDonate=1\nCampaignAdaptiveDifficulty=1\n')
+        old_tt = 'gameDefinitions: { M00_Tutorial: { mapName="M00_Tutorial"; }; };\nrotation: ["M00_Tutorial", "M06"];\ndownloader: { repositoryUrl="http://example:35002/"; };\n'
+        old_cfg = '[Settings]\nbGameTitle=Custom name\nMapName=M00_Tutorial.mix\nMapName00=M00_Tutorial.mix\nMapName01=M06.mix\n[Other]\nKeep=1\n'
+        (self.root / 'server/tt.cfg').write_text(old_tt)
+        (self.root / 'server/data').mkdir()
+        (self.root / 'server/data/svrcfg_cnc.ini').write_text(old_cfg)
+        self.package({'runtime.py': b'supervisor', 'brenbot_runtime.py': b'bot'}, migration='novara-brenbot-m01-v1')
+        backup = update.apply(self.root, self.payload)
+        self.assertEqual((backup / 'server/tt.cfg').read_text(), old_tt)
+        self.assertEqual((backup / 'server/data/svrcfg_cnc.ini').read_text(), old_cfg)
+        current = (self.root / 'server/tt.cfg').read_text()
+        self.assertIn('"M01", "M02"', current)
+        self.assertIn('http://example:35002/', current)
+        cfg = (self.root / 'server/data/svrcfg_cnc.ini').read_text()
+        self.assertNotIn('M00_Tutorial', cfg)
+        self.assertIn('MapName10=M11.mix', cfg)
+        self.assertIn('bGameTitle=Custom name', cfg)
+        self.assertIn('[Other]\nKeep=1', cfg)
+        settings = (self.root / 'server/da.ini').read_text()
+        for key in ('EnableChatSounds', 'EnableTaunts', 'EnableDonate'):
+            self.assertIn(key + '=0', settings)
+            self.assertNotIn(key + '=1', settings)
+        self.assertNotIn('CampaignAdaptiveDifficulty', settings)
+        self.assertIsNone(update.apply(self.root, self.payload))
 
     def test_failure_rolls_back_written_files(self):
         self.package()

@@ -18,6 +18,7 @@ def main():
     parser.add_argument('--host', required=True)
     parser.add_argument('--port', type=int, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--services', action='store_true', help='Also probe portals and supply replenishment on M06/M07/M09')
     args = parser.parse_args()
     log = args.root / 'panel-console.log'
 
@@ -54,6 +55,17 @@ def main():
             output = wait(r'DIAGNOSTIC armor fixed_after_hit=', offset)
             assert 'result=PASS' in output, output
             row['armor'] = [line for line in output.splitlines() if 'DIAGNOSTIC' in line]
+            if args.services:
+                offset = len(log.read_text(errors='replace'))
+                command('campaign_test_portals')
+                output = wait(r'DIAGNOSTIC portal result=', offset)
+                assert 'portal result=PASS' in output, output
+                row['portal'] = [line for line in output.splitlines() if '[Novara]' in line]
+                offset = len(log.read_text(errors='replace'))
+                command('campaign_test_supplies')
+                output = wait(r'DIAGNOSTIC resupply result=', offset)
+                assert 'resupply result=PASS' in output and 'terminal_objects=1' in output, output
+                row['supplies'] = [line for line in output.splitlines() if '[Novara]' in line]
         offset = len(log.read_text(errors='replace'))
         command('campaign_audit_map')
         wait(r'Map audit written:', offset)

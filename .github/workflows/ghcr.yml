@@ -120,6 +120,7 @@ jobs:
         shell: bash
         run: |
           docker run --rm renegade-coop:ci wine --version
+          docker run --rm --network none -v "$PWD/tests/perl:/opt/renegade-coop/tests/perl:ro" renegade-coop:ci python3 /opt/renegade-coop/tools/test_brenbot.py --core /opt/brenbot
           docker run --rm renegade-coop:ci python3 -c 'import os,pathlib,sys; sys.path.insert(0,"/opt/renegade-coop"); import runtime; p=pathlib.Path("/opt/renegade-coop/artifacts/da_campaign.dll"); assert p.read_bytes()[:2]==b"MZ"; assert runtime.ROOT==pathlib.Path("/home/container"); assert os.getuid()==1000; (runtime.ROOT/"write-check").write_text("ok")'
           set +e
           docker run --rm renegade-coop:ci > missing-assets.log 2>&1
