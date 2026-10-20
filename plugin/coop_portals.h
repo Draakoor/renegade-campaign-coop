@@ -34,7 +34,7 @@ static bool Site(const Vector3& origin,Vector3& ground,bool& lowRoom) {
         path.CheckDynamicObjs=false; PhysicsSceneClass::Get_Instance()->Cast_Ray(path);
         if (pathHit.StartBad || pathHit.Fraction<1) { ++sight; continue; }
         CastResultStruct space; space.ComputeContactPoint=true;
-        OBBoxClass bounds(p+Vector3(0,0,low ? 2.2f : 2.7f),Vector3(low ? 2.7f : 2.2f,low ? 2.7f : 2.2f,low ? 2.1f : 2.6f),Matrix3(true));
+        OBBoxClass bounds(p+Vector3(0,0,low ? 2.3f : 2.8f),Vector3(low ? 2.7f : 2.2f,low ? 2.7f : 2.2f,low ? 2.05f : 2.55f),Matrix3(true));
         PhysOBBoxCollisionTestClass box(bounds,Vector3(0,0,.01f),&space,DEFAULT_COLLISION_GROUP);
         box.CheckDynamicObjs=false; PhysicsSceneClass::Get_Instance()->Cast_OBBox(box);
         if (!space.StartBad && space.Fraction==1) { ground=p; lowRoom=low; return true; }
@@ -67,7 +67,8 @@ static bool Add(const Vector3& origin,const Vector3& destination) {
         Matrix3D transform(true); transform.Rotate_Z(rad);
         if (lowRoom) transform.Rotate_Y(1.5707963f);
         const Vector3 modelCenter(0,2.484f,2.375f);
-        const Vector3 center=point+normal*(lowRoom ? 2.55f : 2.03f)+Vector3(0,0,lowRoom ? 2.1f : 2.54f);
+        // The laser field floats 25cm above uneven ground; the flag is grounded.
+        const Vector3 center=point+normal*(lowRoom ? 2.55f : 2.03f)+Vector3(0,0,lowRoom ? 2.3f : 2.79f);
         transform.Set_Translation(center-transform.Rotate_Vector(modelCenter));
         auto* wall=Commands->Create_Object("Simple_Sydney_SandM_Wall",transform.Get_Translation());
         if (wall) { wall->As_PhysicalGameObj()->Set_Transform(transform); props.push_back(wall); }
