@@ -13,7 +13,7 @@ else:
     from mission_sources import compile_source
 
 PROJECT = Path(__file__).resolve().parents[1]
-MAPS = ['M00_Tutorial'] + [f'M{i:02d}' for i in range(1, 12)]
+MAPS = [f'M{i:02d}' for i in range(1, 12)]
 EXISTING = [m for m in MAPS if m not in ('M06', 'M07', 'M09')]
 ADAPTED = ('M06', 'M07', 'M09')
 
@@ -98,7 +98,7 @@ def prepare(work, game, output, *, fds_data=None, mission_input=None, download_u
     definitions += '};\nrotation: ' + json.dumps(MAPS) + ';\n'
     definitions += 'downloader: { repositoryUrl=' + json.dumps(download_url.rstrip('/') + '/') + '; };\n'
     (defaults / 'tt.cfg').write_text(definitions, encoding='utf-8')
-    for name in ('bootstrap.py', 'runtime.py', 'gamespy.py', 'volume_lock.py', 'sources.lock.json'):
+    for name in ('bootstrap.py', 'runtime.py', 'brenbot_runtime.py', 'gamespy.py', 'volume_lock.py', 'sources.lock.json'):
         shutil.copyfile(PROJECT / name, output / name)
     # Ship the matching source and licence with our compiled plugin.
     copy_tree(PROJECT / 'plugin', output / 'source' / 'plugin')

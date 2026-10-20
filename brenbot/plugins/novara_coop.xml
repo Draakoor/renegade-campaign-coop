@@ -1,0 +1,2 @@
+<?xml version="1.0"?>
+<plugin name="novara_coop"><events><event>text</event></events><config><cvar name="enabled" value="1"/></config></plugin>

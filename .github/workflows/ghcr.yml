@@ -25,6 +25,12 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m unittest discover -s tests -v
+      - name: Test BRenBot and plugins without network access
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y perl libpoe-perl libxml-simple-perl libxml-parser-perl libdbi-perl libdbd-sqlite3-perl libfile-homedir-perl libclass-unload-perl
+          python tools/build_brenbot.py --output build/brenbot
+          python tools/test_brenbot.py --core build/brenbot
       - name: Test shared mission progression
         run: |
           g++ -std=c++14 -Wall -Wextra -pedantic tests/mission_state.cpp -o mission-tests

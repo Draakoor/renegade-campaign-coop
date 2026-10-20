@@ -9,18 +9,24 @@ LABEL org.opencontainers.image.title="Renegade Campaign Coop development runtime
       org.opencontainers.image.licenses="GPL-2.0-or-later AND GPL-3.0-or-later"
 
 USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      perl libpoe-perl libxml-simple-perl libxml-parser-perl libdbi-perl \
+      libdbd-sqlite3-perl libfile-homedir-perl libclass-unload-perl \
+    && rm -rf /var/lib/apt/lists/*
 RUN groupadd --gid 1000 container \
     && useradd --uid 1000 --gid container --home-dir /home/container --shell /bin/bash --no-create-home container \
     && mkdir -p /home/container \
     && chown container:container /home/container
 WORKDIR /opt/renegade-coop
-COPY bootstrap.py runtime.py gamespy.py volume_lock.py sources.lock.json COPYING COPYING.plugin THIRD_PARTY.txt ./
+COPY bootstrap.py runtime.py brenbot_runtime.py gamespy.py volume_lock.py sources.lock.json COPYING COPYING.plugin THIRD_PARTY.txt ./
+COPY brenbot/ brenbot/
 COPY defaults/ defaults/
 COPY tools/*.py tools/
 COPY plugin/ plugin/
 COPY artifacts/da_campaign.dll artifacts/da_campaign.dll
 COPY docker/entrypoint.sh /usr/local/bin/renegade-entrypoint
 RUN chmod 755 /usr/local/bin/renegade-entrypoint \
+    && python3 tools/build_brenbot.py --output /opt/brenbot \
     && python3 -m compileall -q /opt/renegade-coop \
     && test -s artifacts/da_campaign.dll
 

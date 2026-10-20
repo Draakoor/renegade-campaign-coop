@@ -36,13 +36,5 @@ inline bool PlanTransfer(Account donor,const std::vector<Account>& recipients,in
     }
     out=plan; return true;
 }
-inline float Bounded(float value,float fallback,float minimum,float maximum) {
-    return std::isfinite(value) ? (std::max)(minimum,(std::min)(maximum,value)) : fallback;
-}
-struct Difficulty { int players; float resistance,damage; };
-inline Difficulty Scale(int players,float resistanceStep=.35f,float damageStep=.08f) {
-    const int n=(std::max)(1,(std::min)(8,players));
-    return {n,1+(n-1)*Bounded(resistanceStep,.35f,0,2),1+(n-1)*Bounded(damageStep,.08f,0,1)};
-}
 inline bool Elapsed(uint32_t now,uint32_t since,uint32_t duration) { return now-since >= duration; }
 }

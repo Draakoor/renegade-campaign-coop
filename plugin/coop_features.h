@@ -15,9 +15,6 @@ static unsigned nextConnection=0;
 static std::map<int,std::string> skins;
 static std::map<int,std::string> defaultModels;
 static std::map<int,unsigned> modelPresets;
-static CoopRules::Difficulty difficulty=CoopRules::Scale(1);
-static int candidatePlayers=1;
-static DWORD candidateSince=0;
 static bool active=false;
 
 static int Seconds(const char* key,int fallback,int maximum=300) {
@@ -45,7 +42,7 @@ static bool Destination(Vector3& position,float& angle) {
     }
     // Legacy missions gain a shared catch-up point at the latest supply
     // terminal reached by a player, never at an unvisited objective marker.
-    for (auto it=CoopServices::terminals.rbegin(); it!=CoopServices::terminals.rend(); ++it) {
+    for (auto it=CoopServices::reachedTerminals.rbegin(); it!=CoopServices::reachedTerminals.rend(); ++it) {
         if (auto* obj=Commands->Find_Object(*it)) {
             position=Commands->Get_Position(obj); angle=Commands->Get_Facing(obj); return true;
         }
@@ -63,36 +60,10 @@ static void PlaceLegacyRespawn(GameObject* obj) {
     if (!obj || !active || Campaign::state.active() || Campaign::purchasedCharacters.count(Commands->Get_ID(obj)) ||
         !DASettingsManager::Get_Bool("CampaignCatchup",true) ||
         !Mobile(obj->As_SoldierGameObj())) return;
-    Vector3 destination; float angle;
-    if (Destination(destination,angle)) Move(obj->As_SoldierGameObj(),destination,angle);
+    // Keep the original CoopBeta spawn/teleport progression.
     Campaign::ApplyKeys(obj->As_SoldierGameObj());
 }
-static const char* SkinPreset(const char* name) {
-    // Resolve models from installed stock presets; never accept a model path
-    // supplied by a player, and never change their class, weapons or armor.
-    struct Entry { const char* name; const char* preset; };
-    static const Entry entries[]={
-        {"havoc","CnC_GDI_MiniGunner_3Boss"},{"soldier","CnC_GDI_MiniGunner_0"},
-        {"engineer","CnC_GDI_Engineer_0"},{"hotwire","CnC_GDI_Engineer_2SF"},
-        {"gunner","CnC_GDI_RocketSoldier_2SF"},{"patch","CnC_GDI_MiniGunner_2SF"},
-        {"mobius","CnC_Ignatio_Mobius"},{"sydney","CnC_Sydney_PowerSuit"}};
-    for (const auto& e : entries) if (!_stricmp(name,e.name)) return e.preset;
-    return nullptr;
-}
-static std::string SkinModel(const char* name) {
-    const char* preset=SkinPreset(name); if (!preset) return {};
-    auto* def=Find_Named_Definition(preset);
-    if (!def || def->Get_Class_ID()!=CID_Soldier) return {};
-    auto* physics=DefinitionMgrClass::Find_Definition(static_cast<SoldierGameObjDef*>(def)->Get_Phys_Def_ID(),true);
-    if (!physics) return {};
-    std::string model=static_cast<PhysDefClass*>(physics)->Get_Model_Name().Peek_Buffer();
-    // LevelEdit stores source directories; engine model lookups use the W3D
-    // basename in MIX/TTFS. Passing the source path can trigger an engine assert.
-    const auto slash=model.find_last_of("/\\");
-    if (slash!=std::string::npos) model=model.substr(slash+1);
-    if (model.size()>4 && !_stricmp(model.c_str()+model.size()-4,".w3d")) model.resize(model.size()-4);
-    return model;
-}
+static std::string SkinModel(const char* name) { return Cosmetics::Resolve(name); }
 static void ApplySkin(cPlayer* player) {
     auto* obj=player->Get_GameObj();
     if (!Mobile(obj)) return;
@@ -105,48 +76,13 @@ static void ApplySkin(cPlayer* player) {
     const auto model=SkinModel(it->second.c_str());
     if (!model.empty() && _stricmp(model.c_str(),Get_Model(obj))) Commands->Set_Model(obj,model.c_str());
 }
-static bool HumanControlled(GameObject* obj) {
-    if (Campaign::Human(obj)) return true;
-    auto* vehicle=obj ? obj->As_VehicleGameObj() : nullptr;
-    return vehicle && (Campaign::Human(vehicle->Get_Driver()) || Campaign::Human(vehicle->Get_Gunner()));
-}
-static bool Enemy(GameObject* obj) {
-    if (!obj || Commands->Get_Player_Type(obj)!=0 || HumanControlled(obj)) return false;
-    // Buildings, neutral/civilian/escort characters and environmental damage
-    // keep their mission-defined behavior. Vehicle damage is scaled only if
-    // the vehicle is actually driven by an AI actor.
-    if (obj->As_SoldierGameObj()) return true;
-    auto* vehicle=obj->As_VehicleGameObj();
-    return vehicle && vehicle->Get_Occupant_Count()>0;
-}
-static void AdaptDamage(GameObject* victim,GameObject* damager,float& damage) {
-    if (!active || !DASettingsManager::Get_Bool("CampaignAdaptiveDifficulty",true) ||
-        !std::isfinite(damage) || damage<=0 || !damager ||
-        (Campaign::state.active() && Campaign::state.outcome!=Campaign::Outcome::Running)) return;
-    if (Enemy(victim) && HumanControlled(damager) && Commands->Get_Player_Type(damager)==1) damage/=difficulty.resistance;
-    else if (Enemy(damager) && HumanControlled(victim) && Commands->Get_Player_Type(victim)==1) damage*=difficulty.damage;
-}
 static void Loaded() {
     active=Campaign::CoopMap(); teleports.clear(); lastCombat.clear(); lastTeleport.clear();
-    defaultModels.clear(); modelPresets.clear(); difficulty=CoopRules::Scale(1);
-    candidatePlayers=1; candidateSince=GetTickCount();
+    defaultModels.clear(); modelPresets.clear();
 }
 static void Tick() {
     if (!active) return;
     const DWORD now=GetTickCount(); const auto players=Team();
-    // Count connected teammates, including dead players waiting to respawn.
-    // A death must not instantly reduce difficulty or heal existing enemies.
-    const int count=(std::max)(1,(std::min)(8,static_cast<int>(players.size())));
-    if (count!=candidatePlayers) { candidatePlayers=count; candidateSince=now; }
-    if (CoopRules::Elapsed(now,candidateSince,Seconds("CampaignDifficultyUpdateSeconds",15)*1000)) {
-        const auto next=DASettingsManager::Get_Bool("CampaignAdaptiveDifficulty",true) ?
-            CoopRules::Scale(count,DASettingsManager::Get_Float("CampaignEnemyResistancePerPlayer",.35f),
-                DASettingsManager::Get_Float("CampaignEnemyDamagePerPlayer",.08f)) : CoopRules::Scale(1);
-        if (next.players!=difficulty.players || next.resistance!=difficulty.resistance || next.damage!=difficulty.damage) {
-            difficulty=next;
-            DA::Host_Message("Coop difficulty: %d player(s), enemy resistance x%.2f, damage x%.2f.",difficulty.players,difficulty.resistance,difficulty.damage);
-        }
-    }
     for (auto* p : players) {
         if (DASettingsManager::Get_Bool("CampaignSkins",true)) ApplySkin(p);
         auto it=teleports.find(p->Get_Id()); if (it==teleports.end()) continue;
@@ -216,15 +152,13 @@ public:
         Register_Event(DAEvent::PLAYERJOIN); Register_Event(DAEvent::PLAYERLEAVE);
         Register_Event(DAEvent::CHANGECHARACTER);
         Register_Object_Event(DAObjectEvent::DESTROYED,DAObjectEvent::PLAYER);
-        Register_Object_Event(DAObjectEvent::DAMAGERECEIVEDREQUEST,DAObjectEvent::ALL);
         Register_Object_Event(DAObjectEvent::DAMAGERECEIVED,DAObjectEvent::ALL);
-        Register_Chat_Command((DAECC)&Events::Help,"!help|!coophelp|!commands",0);
         Register_Chat_Command((DAECC)&Events::Checkpoint,"!cp|!checkpoint|!catchup",0);
         Register_Chat_Command((DAECC)&Events::Goto,"!go|!goto",1);
-        Register_Chat_Command((DAECC)&Events::Skin,"!skin|!skins",0);
+        Register_Chat_Command((DAECC)&Events::Skin,"!skin",0);
+        Register_Chat_Command((DAECC)&Events::Skins,"!skins",0);
         Register_Chat_Command((DAECC)&Events::Donate,"!donate|!d",0);
         Register_Chat_Command((DAECC)&Events::TeamDonate,"!tdonate|!teamdonate",0);
-        Register_Chat_Command((DAECC)&Events::Difficulty,"!difficulty",0);
     }
     void Player_Join_Event(cPlayer* p) override {
         Player_Leave_Event(p); connections[p->Get_Id()]=++nextConnection;
@@ -240,9 +174,6 @@ public:
         const int id=Commands->Get_ID(obj); defaultModels.erase(id); modelPresets.erase(id);
         Campaign::purchasedCharacters.erase(id); Campaign::observedKeys.erase(id);
     }
-    bool Damage_Request_Event(DamageableGameObj* victim,ArmedGameObj* damager,float& amount,unsigned int&,float,DADamageType::Type) override {
-        AdaptDamage(victim,damager,amount); return true;
-    }
     void Damage_Event(DamageableGameObj* victim,ArmedGameObj* damager,float amount,unsigned int,float,DADamageType::Type) override {
         if (!active || amount<=0 || !std::isfinite(amount)) return;
         for (GameObject* obj : {static_cast<GameObject*>(victim),static_cast<GameObject*>(damager)}) {
@@ -253,9 +184,6 @@ public:
             }
         }
     }
-    bool Help(cPlayer* p,const DATokenClass&,TextMessageEnum) {
-        DA::Page_Player(p,"Novara coop: !buy, !cp, !goto <player>, !skin, !donate <player> <credits>, !tdonate <credits>, !difficulty, !admin. Admin help: !adminhelp."); return false;
-    }
     bool Checkpoint(cPlayer* p,const DATokenClass&,TextMessageEnum) {
         return Enabled(p,"CampaignCatchup") ? Queue(p,nullptr) : false;
     }
@@ -264,9 +192,10 @@ public:
         auto* target=Match_Player(p,text[1],true,false);
         return Session(target) ? Queue(p,target) : false;
     }
+    bool Skins(cPlayer* p,const DATokenClass& text,TextMessageEnum) { if (Enabled(p,"CampaignSkins")) Cosmetics::List(p,text); return false; }
     bool Skin(cPlayer* p,const DATokenClass& text,TextMessageEnum) {
         if (!Enabled(p,"CampaignSkins")) return false;
-        if (!text.Size()) { DA::Page_Player(p,"Cosmetic skins: !skin default|havoc|soldier|engineer|hotwire|gunner|patch|mobius|sydney. Equipment and health stay unchanged."); return false; }
+        if (!text.Size()) { Cosmetics::List(p,text); return false; }
         if (text.Size()!=1 || !Mobile(p->Get_GameObj())) { DA::Page_Player(p,"Use !skin <name> while alive and on foot."); return false; }
         const char* name=text[1].Peek_Buffer(); ApplySkin(p);
         if (!_stricmp(name,"default")) {
@@ -274,7 +203,7 @@ public:
             if (!model.empty()) Commands->Set_Model(p->Get_GameObj(),model.c_str());
         } else {
             if (SkinModel(name).empty()) { DA::Page_Player(p,"Unknown or unavailable skin. Use !skin to list choices."); return false; }
-            skins[p->Get_Id()]=name; ApplySkin(p);
+            skins[p->Get_Id()]=SkinModel(name); ApplySkin(p);
         }
         DA::Page_Player(p,"Cosmetic skin updated. Weapons, health, armor and credits are unchanged."); return false;
     }
@@ -296,15 +225,12 @@ public:
         auto targets=Team(); targets.erase(std::remove(targets.begin(),targets.end(),p),targets.end());
         Transfer(p,targets,amount); return false;
     }
-    bool Difficulty(cPlayer* p,const DATokenClass&,TextMessageEnum) {
-        DA::Page_Player(p,"Coop difficulty: %s, %d player(s), enemy resistance x%.2f, damage x%.2f. Solo baseline; updates after %d seconds.",
-            DASettingsManager::Get_Bool("CampaignAdaptiveDifficulty",true) ? "adaptive" : "disabled",difficulty.players,difficulty.resistance,difficulty.damage,Seconds("CampaignDifficultyUpdateSeconds",15)); return false;
-    }
+
 };
 static void Dump() {
     Vector3 point; float angle=0; const bool checkpoint=Destination(point,angle);
-    Console_Output("[Novara] features checkpoint=%d players=%d resistance=%.2f damage=%.2f pending_teleports=%u skins=%u\n",
-        checkpoint,difficulty.players,difficulty.resistance,difficulty.damage,static_cast<unsigned>(teleports.size()),static_cast<unsigned>(skins.size()));
+    Console_Output("[Novara] features checkpoint=%d pending_teleports=%u skins=%u\n",
+        checkpoint,static_cast<unsigned>(teleports.size()),static_cast<unsigned>(skins.size()));
 }
 static void Probe() {
     if (!active || !DASettingsManager::Get_Bool("CampaignDiagnostics",false) || The_Game()->Get_Current_Players()!=0) {
@@ -321,7 +247,8 @@ static void Probe() {
     const Vector3 position=Commands->Get_Position(actor);
     const std::string original=Get_Model(actor);
     bool pass=true; int tested=0;
-    for (const char* skin : {"havoc","soldier","engineer","hotwire","gunner","patch","mobius","sydney"}) {
+    for (const auto& entry : Cosmetics::catalog) {
+        const char* skin=entry.model.c_str();
         const auto model=SkinModel(skin);
         Console_Output("[Novara] DIAGNOSTIC loading skin=%s model=%s\n",skin,model.c_str());
         if (!model.empty()) Commands->Set_Model(actor,model.c_str());

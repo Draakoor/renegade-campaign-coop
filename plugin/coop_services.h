@@ -5,6 +5,8 @@
 #include "PurchaseSettingsDefClass.h"
 #include "TeamPurchaseSettingsDefClass.h"
 #include "SoldierGameObjDef.h"
+#include "SimpleGameObj.h"
+#include "SimpleGameObjDef.h"
 #include "da_chatcommand.h"
 #include <set>
 
@@ -18,6 +20,7 @@ struct Pickup {
 };
 static std::vector<Pickup> pickups;
 static std::vector<int> terminals;
+static std::vector<int> reachedTerminals;
 static std::set<int> knownSpawners;
 static bool active = false, startTerminal = false;
 static int lastCheckpoint = 0;
@@ -67,6 +70,8 @@ static void ConfigurePurchases() {
     // Campaigns have no multiplayer soldier factory. Expose existing GDI
     // infantry pages; costs, icons and normal character presets stay stock.
     Set_Can_Generate_Soldiers(1,true);
+    if (auto* page=TeamPurchaseSettingsDefClass::Get_Definition(TeamPurchaseSettingsDefClass::TEAM_GDI))
+        for (int i=0; i<4; ++i) { page->Set_Hidden(i,false); page->Set_Disabled(i,false); page->Set_Busy(i,false); }
     for (auto type : {PurchaseSettingsDefClass::TYPE_CLASSES,PurchaseSettingsDefClass::TYPE_SECRET_CLASSES}) {
         auto* page = PurchaseSettingsDefClass::Find_Definition(type,PurchaseSettingsDefClass::TEAM_GDI);
         if (!page) continue;
@@ -87,30 +92,34 @@ static bool AddTerminal(const Vector3& position,float angle,float spacing) {
     if (!DASettingsManager::Get_Bool("CampaignTerminals",true)) return false;
     for (const auto id : terminals) if (auto* obj = Commands->Find_Object(id))
         if (Commands->Get_Distance(position,Commands->Get_Position(obj)) < spacing) return false;
-    auto* obj = Commands->Create_Object("Daves Arrow",position);
+    if (!Campaign::state.active()) return false;
+    auto* obj = Commands->Create_Object("pct_zone_gdi",position);
     if (!obj) return false;
-    StringClass model; DASettingsManager::Get_String(model,"CampaignTerminalModel","o_nod_console-o");
-    Commands->Set_Model(obj,model.Peek_Buffer());
     Commands->Set_Facing(obj,angle); Commands->Set_Player_Type(obj,1);
-    // Standalone stock console; no building destruction/objective connection.
+    // Same purchase preset used by the original CoopBeta mission maps.
     obj->As_PhysicalGameObj()->Set_Collision_Group(UNCOLLIDEABLE_GROUP);
     obj->As_PhysicalGameObj()->Get_Defense_Object()->Set_Can_Object_Die(false);
     Commands->Set_Obj_Radar_Blip_Shape(obj,RADAR_BLIP_SHAPE_OBJECTIVE);
     Commands->Set_Obj_Radar_Blip_Color(obj,RADAR_BLIP_COLOR_GDI);
-    Attach_Script_Once(obj,"Novara_Coop_Terminal","");
+    Attach_Script_Once(obj,"M00_PCT_Pokable_DAK","");
     terminals.push_back(Commands->Get_ID(obj));
     Console_Output("[Novara] Coop terminal at %.2f,%.2f,%.2f\n",position.X,position.Y,position.Z);
     return true;
 }
 static void Loaded() {
-    pickups.clear(); terminals.clear(); knownSpawners.clear();
+    pickups.clear(); terminals.clear(); reachedTerminals.clear(); knownSpawners.clear();
     active = Campaign::CoopMap(); startTerminal = false; lastCheckpoint = 0;
     probeActor = 0; probePickups.clear(); probeStarted = 0;
     if (!active) return;
     // Snapshot only map-loaded objects. Later NPC/player drops never enter it.
     for (auto* n = GameObjManager::GameObjList.Head(); n; n=n->Next()) {
         auto* p = n->Data()->As_PhysicalGameObj();
-        if (p) Track(p->As_PowerUpGameObj());
+        if (p) {
+            Track(p->As_PowerUpGameObj());
+            if (!_stricmp(Commands->Get_Preset_Name(p),"pct_zone_gdi")) terminals.push_back(Commands->Get_ID(p));
+            else if (auto* simple=p->As_SimpleGameObj()) if (simple->Get_Definition().Get_Player_Terminal_Type()==0)
+                terminals.push_back(Commands->Get_ID(p));
+        }
     }
     auto& list = Campaign::Spawners();
     for (int i=0; i<list.Count(); ++i) {
@@ -198,6 +207,14 @@ static void Tick() {
     if (!DASettingsManager::Get_Bool("CampaignTerminals",true)) return;
     const auto players = Campaign::Players();
     if (players.empty()) return;
+    for (int id : terminals) if (auto* terminal=Commands->Find_Object(id)) {
+        if (std::find(reachedTerminals.begin(),reachedTerminals.end(),id)!=reachedTerminals.end()) continue;
+        for (auto* p : players) if (Commands->Get_Distance(Commands->Get_Position(p),Commands->Get_Position(terminal))<=6) {
+            reachedTerminals.push_back(id); break;
+        }
+    }
+    // Original CoopBeta maps already place their own stations. Add no props.
+    if (!Campaign::state.active()) return;
     auto* player = players.front();
     if (!startTerminal && !Get_Vehicle(player)) {
         // A human-occupied position is reachable; the prop has no collision.
@@ -207,16 +224,6 @@ static void Tick() {
     if (Campaign::state.checkpoint > lastCheckpoint) {
         AddTerminal(Campaign::spawn,Campaign::facing,12.0f);
         lastCheckpoint = Campaign::state.checkpoint;
-    }
-    const float spacing = (std::max)(20.0f,DASettingsManager::Get_Float("CampaignTerminalSpacing",75.0f));
-    for (const auto& pickup : pickups) {
-        if (pickup.key) continue;
-        for (auto* p : players) {
-            if (Get_Vehicle(p)) continue;
-            const auto pos = Commands->Get_Position(p);
-            if (Commands->Get_Distance(pos,pickup.transform.Get_Translation()) <= 6.0f)
-                AddTerminal(pos,Commands->Get_Facing(p),spacing);
-        }
     }
 }
 static bool AvailableCharacter(const SoldierGameObjDef* def,int& cost) {
@@ -243,7 +250,9 @@ public:
     Events() {
         Register_Event(DAEvent::POWERUPGRANT);
         Register_Event(DAEvent::CHARACTERPURCHASEREQUEST,INT_MAX-10);
+        Register_Event(DAEvent::REFILL,INT_MAX-10);
         Register_Chat_Command((DAECC)&Events::Buy,"!buy|!pt",0);
+        Register_Chat_Command((DAECC)&Events::Heal,"!heal|!refill",0);
     }
     void PowerUp_Grant_Event(cPlayer* player,const PowerUpGameObjDef* def,PowerUpGameObj* obj) override {
         if (!active) return;
@@ -272,7 +281,13 @@ public:
     }
     bool Buy(cPlayer* player,const DATokenClass&,TextMessageEnum) {
         if (active && NearTerminal(player->Get_GameObj())) { ConfigurePurchases(); Display_GDI_Player_Terminal_Player(player->Get_GameObj()); }
-        else DA::Page_Player(player,"Stand beside a Novara supply terminal to use !buy.");
+        else DA::Page_Player(player,"Stand beside a GDI purchase terminal to use !buy.");
+        return false;
+    }
+    bool Refill_Event(cPlayer* player) override { return !active || NearTerminal(player->Get_GameObj()); }
+    bool Heal(cPlayer* player,const DATokenClass&,TextMessageEnum) {
+        if (active && NearTerminal(player->Get_GameObj())) Grant_Refill(player->Get_GameObj());
+        else DA::Page_Player(player,"Stand beside a GDI purchase terminal to heal/refill.");
         return false;
     }
 };

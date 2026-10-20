@@ -15,7 +15,7 @@ from volume_lock import volume_lock
 from gamespy import broadcast, publication_mode, validate_settings
 
 ROOT = Path(os.environ.get('RENEGADE_ROOT', Path(__file__).resolve().parent)).resolve()
-MAPS = ['M00_Tutorial'] + [f'M{i:02d}' for i in range(1, 12)]
+MAPS = [f'M{i:02d}' for i in range(1, 12)]
 
 
 class PackageHandler(SimpleHTTPRequestHandler):
@@ -130,6 +130,14 @@ def run_locked():
     stopped_at = [None]
     proc = None
     http = None
+    bot = None
+    bot_restarts = 0
+    bot_retry_at = 0
+    bridge_ready = False
+
+    def bot_output(process):
+        for line in process.stdout:
+            print('[BRenBot] ' + line.rstrip(), flush=True)
 
     def stop(*_):
         if not stopping.is_set():
@@ -184,6 +192,21 @@ def run_locked():
                         offset = incoming.tell()
                     if data:
                         print(data.decode('cp1252', errors='replace'), end='', flush=True)
+                        bridge_ready |= b'[Novara] da_campaign loaded' in data
+                if bridge_ready and not stopping.is_set():
+                    if bot is not None and bot.poll() is not None:
+                        print(f'[BRenBot] Exited: {bot.returncode}; retry in 10 seconds.', flush=True)
+                        bot.stdout.close()
+                        bot = None
+                        bot_restarts += 1
+                        bot_retry_at = time.monotonic() + 10
+                    if bot is None and bot_restarts < 3 and time.monotonic() >= bot_retry_at:
+                        from brenbot_runtime import start as start_bot
+                        bot = start_bot(ROOT)
+                        threading.Thread(target=bot_output, args=(bot,), daemon=True).start()
+                    if bot_restarts == 3:
+                        print('[BRenBot] Repeated startup failure; game stays online. Check bot configuration.', flush=True)
+                        bot_restarts += 1
                 if stopped_at[0] and time.monotonic() - stopped_at[0] > 25:
                     print('[Supervisor] Graceful stop timed out; ending this Wine prefix.', flush=True)
                     subprocess.run(['wineserver', '-k'], env=env, check=False)
@@ -193,6 +216,8 @@ def run_locked():
             return 0 if stopping.is_set() else proc.returncode or 1
     finally:
         stopping.set()
+        from brenbot_runtime import stop as stop_bot
+        stop_bot(bot)
         if http:
             http.shutdown()
             http.server_close()

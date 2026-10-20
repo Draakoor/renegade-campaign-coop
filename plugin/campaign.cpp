@@ -10,6 +10,8 @@
 #include "da_settings.h"
 #include "SoldierGameObj.h"
 #include "GameObjManager.h"
+#include "ScriptZoneGameObj.h"
+#include "SimpleGameObj.h"
 #include "SpawnerClass.h"
 #include "SpawnerDefClass.h"
 #include "mission_runtime.h"
@@ -17,10 +19,39 @@
 #include "mission_coop.h"
 #include "coop_services.h"
 #include "campaign_admin.h"
+#include "cosmetics.h"
 #include "coop_features.h"
+#include "brenbot_bridge.h"
 static CoopServices::Events* coopServices = nullptr;
 static NovaraAdmin* campaignAdmin = nullptr;
 static CoopFeatures::Events* coopFeatures = nullptr;
+static BrenBot::Events* brenbot = nullptr;
+
+static void AuditMap() {
+    if (!DASettingsManager::Get_Bool("CampaignDiagnostics",false) || The_Game()->Get_Current_Players()!=0) return;
+    FILE* out=fopen("map-audit.tsv","wb"); if (!out) return;
+    for (auto* n=GameObjManager::GameObjList.Head(); n; n=n->Next()) {
+        auto* obj=n->Data()->As_ScriptableGameObj(); if (!obj) continue;
+        const auto pos=Commands->Get_Position(obj);
+        fprintf(out,"object\t%d\t%s\t%.3f\t%.3f\t%.3f",Commands->Get_ID(obj),Commands->Get_Preset_Name(obj),pos.X,pos.Y,pos.Z);
+        if (auto* physical=obj->As_PhysicalGameObj()) fprintf(out,"\tmodel=%s",Get_Model(physical));
+        if (auto* zone=obj->As_ScriptZoneGameObj()) {
+            const auto& box=zone->Get_Bounding_Box();
+            fprintf(out,"\tzone=%s\textent=%.3f,%.3f,%.3f",zone->Get_Definition().ModelName.Peek_Buffer(),box.Extent.X,box.Extent.Y,box.Extent.Z);
+        }
+        fputs("\n",out);
+        const auto& observers=obj->Get_Observers();
+        for (int i=0; i<observers.Count(); ++i) {
+            const char* name=observers[i]->Get_Name(); char params[4096]={0};
+            // DA observers share this list but are not ScriptImpClass instances.
+            // Find_Script_On_Object performs an unchecked cast.
+            if (ScriptRegistrar::GetScriptFactory(name))
+                if (auto* script=Find_Script_On_Object(obj,name)) script->Get_Parameters_String(params,sizeof(params));
+            fprintf(out,"script\t%d\t%s\t%s\n",Commands->Get_ID(obj),name,params);
+        }
+    }
+    fclose(out); Console_Output("[Novara] Map audit written: %s\n",The_Game()->Get_Map_Name());
+}
 
 static void DumpMissionObjects() {
     FILE* out = fopen("mission-objects.tsv", "wb");
@@ -162,6 +193,9 @@ public:
         Campaign::Loaded();
         CoopServices::Loaded();
         CoopFeatures::Loaded();
+        Cosmetics::Build();
+        AdminTools::Loaded();
+        BrenBot::Loaded();
         const char* map = The_Game()->Get_Map_Name();
         FILE* state = fopen("active-map.tmp", "wb");
         if (state) { fputs(map, state); fclose(state);
@@ -176,6 +210,8 @@ public:
         Campaign::Tick((std::min)(elapsed,1.0f));
         CoopServices::Tick();
         CoopFeatures::Tick();
+        AdminTools::Tick();
+        BrenBot::Tick();
         FILE* in = fopen("console.in", "rb");
         if (!in) return;
         fseek(in, inputOffset, SEEK_SET);
@@ -191,6 +227,12 @@ public:
             else if (!_stricmp(line,"campaign_supplies")) CoopServices::Dump();
             else if (!_stricmp(line,"campaign_features")) CoopFeatures::Dump();
             else if (!_stricmp(line,"campaign_test_features")) CoopFeatures::Probe();
+            else if (!_stricmp(line,"campaign_catalog")) Cosmetics::Dump();
+            else if (!_stricmp(line,"campaign_audit_map")) AuditMap();
+            else if (!_stricmp(line,"campaign_test_vehicles")) AdminTools::Probe();
+            else if (!_strnicmp(line,"campaign_test_map ",18) && DASettingsManager::Get_Bool("CampaignDiagnostics",false) && The_Game()->Get_Current_Players()==0) {
+                Console_Output("[Novara] DIAGNOSTIC map request accepted=%d\n",AdminTools::ChangeMap(line+18));
+            }
             else if (!_stricmp(line,"campaign_test_supplies")) CoopServices::Probe();
             else if (!_strnicmp(line,"campaign_admin ",15)) {
                 if (!campaignAdmin->Approve(line+15)) Console_Output("[Novara] Admin request not found or expired. Use !admin in-game first.\n");
@@ -220,11 +262,13 @@ extern "C" __declspec(dllexport) void Plugin_Init() {
     coopServices = new CoopServices::Events;
     campaignAdmin = new NovaraAdmin;
     coopFeatures = new CoopFeatures::Events;
+    brenbot = new BrenBot::Events;
     panelConsole = new PanelConsole;
     Console_Output("[Novara] da_campaign loaded (TT 4.8.4 / DA 1.11.1).\n");
 }
 extern "C" __declspec(dllexport) void Plugin_Shutdown() {
     Campaign::Uninstall();
+    delete brenbot; brenbot = nullptr;
     delete coopFeatures; coopFeatures = nullptr;
     delete campaignAdmin; campaignAdmin = nullptr;
     delete coopServices; coopServices = nullptr;

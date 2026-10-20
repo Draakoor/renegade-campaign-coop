@@ -1,4 +1,4 @@
-"""Probe an empty, private native FDS with Tutorial -> M01-M11 rotation.
+"""Probe an empty, private native FDS with M01-M11 rotation.
 
 Requires CampaignDiagnostics=1. Advances maps with gameover; never use on a
 live session. Synthetic engine checks do not substitute for client playtests.
@@ -38,14 +38,14 @@ def main():
         raise RuntimeError('Timed out: ' + pattern)
 
     results = []
-    maps = ['M00_Tutorial'] + [f'M{i:02d}' for i in range(1, 12)]
+    maps = [f'M{i:02d}' for i in range(1, 12)]
     for index, name in enumerate(maps):
         status = query(args.host, args.port)
         assert status['mapname'].casefold() == (name+'.mix').casefold(), status
         offset = len(log.read_text(errors='replace'))
         command('campaign_test_features')
         output = wait(r'DIAGNOSTIC features result=', offset)
-        assert 'features result=PASS skins=8' in output, output
+        assert re.search(r'features result=PASS skins=([1-9][0-9]*)', output), output
         row = {'map': name, 'human_clients': 0,
                'features': [line for line in output.splitlines() if '[Novara]' in line]}
         if name in ('M06', 'M07', 'M09'):
@@ -54,6 +54,11 @@ def main():
             output = wait(r'DIAGNOSTIC armor fixed_after_hit=', offset)
             assert 'result=PASS' in output, output
             row['armor'] = [line for line in output.splitlines() if 'DIAGNOSTIC' in line]
+        offset = len(log.read_text(errors='replace'))
+        command('campaign_audit_map')
+        wait(r'Map audit written:', offset)
+        audit = (args.root / 'map-audit.tsv').read_bytes()
+        (args.output.parent / (name + '-map-audit.tsv')).write_bytes(audit)
         results.append(row)
         args.output.write_text(json.dumps(results, indent=2) + '\n')
         print(name + ': PASS (synthetic, zero clients)', flush=True)
@@ -62,7 +67,7 @@ def main():
             command('gameover')
             wait(re.escape('[Novara] Resupply map='+maps[index+1]+'.mix'), offset)
             time.sleep(.75)
-    print('All twelve map probes passed; mission playthroughs remain untested.', flush=True)
+    print('All eleven map probes passed; mission playthroughs remain untested.', flush=True)
 
 
 if __name__ == '__main__':

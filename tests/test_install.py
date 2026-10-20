@@ -54,7 +54,7 @@ class InstallationTests(unittest.TestCase):
 
     def test_incomplete_missions_cannot_be_public(self):
         (self.root / 'validation.json').write_text(json.dumps({'missions': {}}))
-        with self.assertRaisesRegex(RuntimeError, 'M00_Tutorial'):
+        with self.assertRaisesRegex(RuntimeError, 'M01'):
             runtime.check_validation(self.root)
 
 

@@ -1,5 +1,11 @@
 {
   "schema": 1,
+  "brenbot": {
+    "version": "1.56 build 1",
+    "commit": "ed521436e653f7bdc3fed5b118402efdf2cd34f1",
+    "url": "https://gitlab.com/api/v4/projects/danpaul88%2Fbrenbot/repository/archive.zip?sha=ed521436e653f7bdc3fed5b118402efdf2cd34f1",
+    "sha256": "eefe36bafbbf4998d3b0be98edd53c5fd5ac5b7ab8db55779f45d1c33a4b46a6"
+  },
   "wine_image": "ghcr.io/ptero-eggs/yolks@sha256:db48c30fc50104a43d951200174d33e2b9200f80b03b3ded9c106586450dbcf8",
   "tt": {
     "version": "4.8.4",

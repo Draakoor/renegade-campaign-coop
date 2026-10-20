@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<plugin name="funsounds">
+  <events><event>text</event></events>
+  <config>
+    <cvar name="trigger_f2chat" value="1"/>
+    <cvar name="trigger_f3chat" value="1"/>
+    <cvar name="player_cooldown" value="10"/>
+    <cvar name="global_cooldown" value="3"/>
+  </config>
+</plugin>
