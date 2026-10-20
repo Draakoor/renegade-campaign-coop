@@ -40,6 +40,8 @@ sub install {
     *serverStatus::init = sub {};
     *modules::AutoAnnounce_Init = sub {};
     *brconfig::GetAvailableMaps = sub {};
+    *renlog::check_banlist = sub { return 0; };
+    *modules::check_kicks = sub { return 0; };
     *brconfig::read_server_configuration = sub {};
     *brconfig::read_ssgm_settings = sub {
         $brconfig::ssgm_version = 4.1;

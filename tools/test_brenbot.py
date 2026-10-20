@@ -29,7 +29,7 @@ def test(core):
         work = prepare(root, core)
         # Short, deterministic cooldowns exercise the production plugin logic.
         xml = work / 'plugins/funsounds.xml'
-        xml.write_text(xml.read_text().replace('value="10"', 'value="0.2"').replace('value="3"', 'value="0.1"'))
+        xml.write_text(xml.read_text().replace('value="10"', 'value="1"').replace('value="3"', 'value="0.3"'))
         env = os.environ.copy()
         env.update(NOVARA_SERVER=str(server), PERL5LIB=os.pathsep.join((str(core), str(REPO / 'tests/perl'))), PERL5OPT='-MNovaraNoNetwork')
         proc = subprocess.Popen(['perl', str(core / 'brenbot.pl')], cwd=work, env=env,
@@ -76,7 +76,7 @@ def test(core):
             assert 'sound 22 2 ' not in emitted and 'sound 33 3 ' not in emitted
             chat('!taunt haha', scope='team')
             wait(lambda: 'cooldown active' in output.read_text()[before:])
-            time.sleep(.3)
+            time.sleep(1.1)
             send(dict(event='leave', **players[1]))
             players[1]['session'] = 24
             send(dict(event='join', **players[1]))

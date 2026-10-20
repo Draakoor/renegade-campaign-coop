@@ -18,6 +18,7 @@
 #include "mission_controllers.h"
 #include "mission_coop.h"
 #include "coop_services.h"
+#include "coop_portals.h"
 #include "campaign_admin.h"
 #include "cosmetics.h"
 #include "coop_features.h"
@@ -198,6 +199,7 @@ public:
     void Level_Loaded_Event() override {
         Campaign::Loaded();
         CoopServices::Loaded();
+        CoopPortals::Loaded();
         CoopFeatures::Loaded();
         Cosmetics::Build();
         AdminTools::Loaded();
@@ -215,6 +217,7 @@ public:
         lastPoll = now;
         Campaign::Tick((std::min)(elapsed,1.0f));
         CoopServices::Tick();
+        CoopPortals::Tick();
         CoopFeatures::Tick();
         AdminTools::Tick();
         BrenBot::Tick();
@@ -240,6 +243,7 @@ public:
                 Console_Output("[Novara] DIAGNOSTIC map request accepted=%d\n",AdminTools::ChangeMap(line+18));
             }
             else if (!_stricmp(line,"campaign_test_supplies")) CoopServices::Probe();
+            else if (!_stricmp(line,"campaign_test_portals")) CoopPortals::Probe();
             else if (!_strnicmp(line,"campaign_admin ",15)) {
                 if (!campaignAdmin->Approve(line+15)) Console_Output("[Novara] Admin request not found or expired. Use !admin in-game first.\n");
             }
