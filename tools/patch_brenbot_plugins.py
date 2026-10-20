@@ -60,6 +60,14 @@ def configure(name, source, xml):
                          '  # No extra unmutable recommendation sound.')
         allowed = {'recommend', 'recommendations', 'teamplayers'}
     elif name == 'ping':
+        # BRenBot command events provide nick; text events additionally carry id.
+        source = replace(source, "sub ping\n{\n  my %args = %{$_[ ARG0 ]};",
+                         """sub ping
+{
+  my %args = %{$_[ ARG0 ]};
+  my ($found, %sender) = plugin::getPlayerData($args{'nick'});
+  return unless $found == 1;
+  $args{'id'} = $sender{'id'};""")
         command, own = source.split('sub report_own_ping', 1)
         command = replace(command,
                          "plugin::pagePlayer ( $player{'id'}, 'Your ping is currently '.$player{'ping'} );",
