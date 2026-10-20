@@ -1,0 +1,2 @@
+<?xml version="1.0"?>
+<plugin name="custom_commands"><events><event>text</event></events><config/></plugin>

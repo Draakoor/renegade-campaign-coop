@@ -4,6 +4,7 @@
 #include "VehicleGameObjDef.h"
 #include "VehicleGameObj.h"
 #include "PhysDefClass.h"
+#include "admin_weapons.h"
 
 namespace AdminTools {
 struct Vehicle { unsigned id; std::string preset; int seats; bool flying; };
@@ -18,6 +19,7 @@ static bool Drivable(const VehicleGameObjDef* def) {
     return phys && !static_cast<PhysDefClass*>(phys)->Get_Model_Name().Is_Empty();
 }
 static void Loaded() {
+    AdminWeapons::Loaded();
     vehicles.clear(); spawned.clear(); probeObject=0; probeActive=false;
     for (auto* d=DefinitionMgrClass::Get_First(CID_Vehicle); d; d=DefinitionMgrClass::Get_Next(d,CID_Vehicle)) {
         auto* def=static_cast<VehicleGameObjDef*>(d);

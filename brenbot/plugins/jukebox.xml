@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<plugin name="jukebox">
+  <events><event>text</event><event>mapload</event></events>
+  <config><cvar name="defaultState" value="0"/><cvar name="commandCooldown" value="2"/></config>
+</plugin>

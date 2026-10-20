@@ -13,8 +13,10 @@ sub text {
         NovaraLocal::page($id,'Coop: !buy, !heal, !cp, !goto <player>, !skins, !donate <player> <credits>, !tdonate <credits>.');
         NovaraLocal::page($id,'Fun: !sounds, !taunt <keyword>, !sounds off/on. Info: !rotation, !version, !scripts. Admin: !admin, !adminhelp.');
         NovaraLocal::page($id,'Community: !setjoin <message|off>, !viewjoin, !seen <player>, !rec <player> <reason>, !recs, !teamplayers.');
+        NovaraLocal::page($id,'Music: !tracks, !music on/off, !settrack <ID|name>, !nexttrack. Info: !ping [player], !rules, !website, !serverinfo.');
     } elsif ($text =~ /^!extras\s*$/) {
         NovaraLocal::page($id,'!skins [search] [page], !skin <ID|model>, !skin default, !sounds, !taunt <keyword>, !sounds off/on.');
+        NovaraLocal::page($id,'Personal jukebox: !tracks [page], !music on/off, !settrack <ID|name>, !nexttrack.');
     } elsif ($text =~ /^!rotation\s*$/) {
         NovaraLocal::page($id,'Rotation: M01 -> M02 -> M03 -> M04 -> M05 -> M06 -> M07 -> M08 -> M09 -> M10 -> M11 -> M01. Current: '.$NovaraLocal::map);
     } elsif ($text =~ /^!scripts\s*$/) {

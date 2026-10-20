@@ -139,15 +139,35 @@ The image fetches official BRenBot at the commit and SHA256 in `sources.lock.jso
 
 - BRenBot core owns `!version`.
 - `novara_coop` owns `!help`, `!commands`, `!coophelp`, `!extras`, `!rotation` and `!scripts`.
-- `funsounds` owns `!sounds [page|on|off]`, `!taunts`, `!taunt <keyword>`, `!sound`, `!disablesounds` and `!enablesounds`. It includes all 49 keyword/WAV mappings from upstream Funsounds 1.02, using sounds already present in the game. Public chat plays to unmuted players; team chat stays within that team. Private chat is not forwarded. Matching is case-insensitive at word boundaries, with one sound per message, a 10-second player cooldown and a 3-second global cooldown.
+- `funsounds` owns `!sounds [page|on|off]`, `!taunts`, `!taunt <keyword>`, `!sound`, `!disablesounds` and `!enablesounds`. Its default catalog has 169 trigger words and 68 distinct WAVs: the original 49 mappings plus 120 English/German aliases and 20 additional sounds verified in the original game. Examples: `hilfe`, `sanitäter`, `kaffee`, `muh`, `yeah`, `alarm`, `ion cannon`, `c4 gelegt`. Public chat plays to unmuted players; team chat stays within that team. Private chat is not forwarded. Matching is case-insensitive at Unicode word boundaries, with one sound per message, a 10-second player cooldown and a 3-second global cooldown.
 - Official `joinmessages` adds `!setjoin <message|off>` and `!viewjoin`. A saved greeting (up to 160 characters) appears once when that player connects. Repeated player snapshots do not repeat it.
 - Official `seen` adds `!seen <player>`, with a private reply for online players or their last recorded visit. The bundled compatibility patch fixes its table name and SQL quoting, and treats partial names literally.
 - Official `recommendations` adds `!rec <player|ID> <reason>`, `!recommendations` / `!recs` and `!teamplayers` / `!tp`. Players can recommend at most five times per rolling 24 hours, once per recipient, and cannot recommend themselves. Automatic competitive-mode awards, negative ratings and bot moderator commands are disabled. Recommendations do not award credits or permissions.
+- `jukebox` provides the original plugin's 19 Renegade music tracks through `!tracks [page]`, `!music on/off`, `!settrack <ID|name>` and `!nexttrack`. Playback is personal and opt-in; tracks advance automatically. Respawning or changing maps resumes the selected track from its beginning. Reconnecting resets the preference to off. No music files are redistributed.
+- Official `ping` privately reports `!ping [player]` from actual server latency.
+- `custom_commands` provides configurable reply-only `!rules`, `!website`, `!serverinfo`, `!afk`, `!back` and `!show_commands`. Reserved gameplay/admin names are rejected; replies cannot execute server macros.
+- `htmloutput` saves escaped public-chat, join, leave and map events in the private volume's `brenbot/HTML_Game_Logs/` directory. Team/private chat and commands are excluded; files have a 5 MiB daily cap. They are not published to a website.
+- Official `fds_status_reporter` writes map, team counts and player statistics to `brenbot/fdsstatus.txt` every 15 seconds. FTP is disabled; unavailable server FPS is reported as unknown.
 - The game plugin owns purchases/refills, checkpoints, skins, credit transfers and panel-approved administrator actions. Duplicate Dragonade donations, BRenBot administrative commands, voting, team balancing and the former C++ sound/help handlers are disabled or removed.
 
-Persistent bot configuration is in `brenbot/brenbot.cfg`, `brenbot/funsounds.json` and `brenbot/plugins/funsounds.xml`. SQLite state is in `brenbot/brenbot.dat`. Startup preserves these settings. Managed Perl plugin source and `commands.xml` update from the image with backups. Do not enable nickname-only bot moderators; `!admin` plus panel confirmation remains authoritative. Bot output appears in the panel as `[BRenBot]`. A failed bot retries twice without taking down the game.
+Persistent bot configuration is in `brenbot/brenbot.cfg`, `brenbot/funsounds.json`, `brenbot/jukebox.json`, `brenbot/custom_commands.json` and `brenbot/plugins/*.xml`. SQLite state is in `brenbot/brenbot.dat`. Startup preserves these settings. The extra sound catalog is merged once, with a backup, preserving existing keyword values; later operator removals remain removed. Managed Perl plugin source and `commands.xml` update from the image with backups. Do not enable nickname-only bot moderators; `!admin` plus panel confirmation remains authoritative. Bot output appears in the panel as `[BRenBot]`. A failed bot retries twice without taking down the game.
 
-The three social plugins are extracted from the same verified upstream archive as the bot. Their narrow compatibility fixes live in `tools/patch_brenbot_plugins.py`; original author notices remain in the image. The first upgraded start saves a consistent SQLite backup under `backups/brenbot-social-*/brenbot.dat`. Greetings, last visits and recommendations persist by nickname, which is a social label, not authenticated identity. Updating an already integrated BRenBot volume needs only the new image and a restart while the server is empty; the existing game DLL and mission settings can stay in place.
+The social, ping and status plugins are extracted from the same verified upstream archive as the bot. Their compatibility fixes live in `tools/patch_brenbot_plugins.py`; original author notices remain in the image. Jukebox, Funsounds, custom commands and HTML output use local coop adaptations. The first upgraded start saves a consistent SQLite backup under `backups/brenbot-social-*/brenbot.dat`. Greetings, last visits and recommendations persist by nickname, which is a social label, not authenticated identity. This update needs both the new image and game DLL for the music bridge, latency reporting and administrator weapons.
+
+All 22 directories in the pinned official plugin catalog were reviewed. Ten modules are enabled, including the Novara help module; this is not an installation of every upstream plugin. The remaining upstream modules are omitted for these specific reasons:
+
+| Upstream plugins | Reason |
+| --- | --- |
+| `donate`, `ssgm_extras` | Duplicate existing credit transfer, refill and secure game administration commands |
+| `gamespy` | Duplicates the existing query service and master-server broadcaster |
+| `swap` | Team swapping conflicts with the single-team campaign |
+| `hostauth` | Legacy hostname authentication does not replace panel-confirmed administration |
+| `mute`, `tags`, `warnings` | Depend on legacy BRenBot moderator permissions and console commands that the local adapter intentionally cannot execute; need a separate authenticated moderation integration |
+| `rank` | Assumes competitive match results and both teams; reliable campaign completion/statistics events are not yet bridged |
+| `biatch` | Requires its separate anti-cheat integration, unavailable through this local adapter |
+| `ipbot` | Requires a legacy external IP database account and sends player IP addresses to that service |
+| `serialHashLogger` | Requires serial-hash events not exposed by the bridge; upstream also declares the wrong Perl package |
+| `test_plugin` | Developer sample rather than a server feature |
 
 The [integration report](validation/brenbot-coop-2026-10-20.json) records all eleven map probes, original station/teleport counts, and the BRenBot checks run in GitHub Actions. Migrating an existing volume requires the new image plus an update package made with `tools/make_plugin_update.py --brenbot-migration`. That explicit migration backs up files, updates the supervisor/plugin, selects M01–M11, removes obsolete scaling settings and disables conflicting Dragonade commands while preserving other operator settings.
 
@@ -161,6 +181,8 @@ Live settings are stored under `server/` in the server volume. The repository's 
 | --- | --- |
 | `brenbot/funsounds.json` | Chat keyword to existing game WAV mapping |
 | `brenbot/plugins/funsounds.xml` | Chat triggers and sound cooldowns |
+| `brenbot/jukebox.json`, `brenbot/plugins/jukebox.xml` | Original music catalog, durations and opt-in playback settings |
+| `brenbot/custom_commands.json` | Public information commands and their private replies |
 | `server/da.ini` | Dragonade, coop features, spawn protection, GameSpy queries |
 | `server/data/svrcfg_cnc.ini` | `bGameTitle`, `MaxPlayers`, `StartingCredits`, game password, game rules |
 | `server/tt.cfg` | Rotation, map definitions and TT downloads |
@@ -188,7 +210,9 @@ Dragonade supports map-specific overrides such as `[M06.mix]`. Placement and sup
 
 ### Administrator approval
 
-A name alone does not authenticate an administrator on GameSpy/LAN. `CampaignAdminName` therefore permits only an access request: type `!admin` in-game, then confirm the privately displayed `campaign_admin <Code>` command in the authenticated panel console within five minutes. Each request is single-use and expires when the player leaves; administrator access ends when that connection ends. No passwords or client identifiers are published. `!adminhelp` lists `!givecredits <player|me|all> <amount>`, `!vehicles [search] [page]`, `!spawnvehicle <ID|preset>`, `!map <M01..M11>`, `!nextmap`, `!restartmap` and `!kick <player-ID>`. Vehicle spawning requires a living administrator on foot, a clear position, a five-second cooldown and a configurable per-map cap (`CampaignAdminVehicleLimit=20`). Scripted NPC behavior is removed from administrator vehicles. The catalog includes all driveable GDI, Nod, civilian and flying presets; scenery, turrets and vehicles without entry transitions are excluded. There is no chat command for executing arbitrary console commands.
+A name alone does not authenticate an administrator on GameSpy/LAN. `CampaignAdminName` therefore permits only an access request: type `!admin` in-game, then confirm the privately displayed `campaign_admin <Code>` command in the authenticated panel console within five minutes. Each request is single-use and expires when the player leaves; administrator access ends when that connection ends. No passwords or client identifiers are published. `!adminhelp` lists `!givecredits <player|me|all> <amount>`, `!vehicles [search] [page]`, `!spawnvehicle <ID|preset>`, `!weapons [search] [page]`, `!giveweapon <player/ID|me|all> <ID|preset>`, `!giveammo <player/ID|me|all>`, `!map <M01..M11>`, `!nextmap`, `!restartmap` and `!kick <player-ID>`. Weapon grants add a portable weapon with full ammunition or refill an existing copy. `!giveammo` fills all carried weapons' magazines and reserves without healing, changing armor or granting keys. Recipients must have a living soldier. The weapon catalog uses the current map's definitions; browse it before choosing an ID. Example: `!weapons ramjet`, then `!giveweapon me <ID>` or `!giveweapon Draakoor <ID>`; `!giveammo all` refills everyone. Actions are logged to the panel.
+
+Vehicle spawning requires a living administrator on foot, a clear position, a five-second cooldown and a configurable per-map cap (`CampaignAdminVehicleLimit=20`). Scripted NPC behavior is removed from administrator vehicles. The catalog includes all driveable GDI, Nod, civilian and flying presets; scenery, turrets and vehicles without entry transitions are excluded. There is no chat command for executing arbitrary console commands.
 
 The port uses the spawner interface of the pinned FDS version. The installer rejects other executable hashes. Upgrading TT/Dragonade requires another compatibility review of those interfaces.
 

@@ -239,6 +239,7 @@ public:
             else if (!_stricmp(line,"campaign_catalog")) Cosmetics::Dump();
             else if (!_stricmp(line,"campaign_audit_map")) AuditMap();
             else if (!_stricmp(line,"campaign_test_vehicles")) AdminTools::Probe();
+            else if (!_stricmp(line,"campaign_test_weapons")) AdminWeapons::Probe();
             else if (!_strnicmp(line,"campaign_test_map ",18) && DASettingsManager::Get_Bool("CampaignDiagnostics",false) && The_Game()->Get_Current_Players()==0) {
                 Console_Output("[Novara] DIAGNOSTIC map request accepted=%d\n",AdminTools::ChangeMap(line+18));
             }

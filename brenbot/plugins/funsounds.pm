@@ -60,7 +60,7 @@ sub text {
         return if $args->{messagetype} eq 'public' && !$config{trigger_f2chat};
         return if $args->{messagetype} eq 'team' && !$config{trigger_f3chat};
         for my $key (sort {length($b)<=>length($a) || $a cmp $b} keys %sounds) {
-            if ($text =~ /(?<![a-z0-9_])\Q$key\E(?![a-z0-9_])/) { play($args,$key,0); last; }
+            if ($text =~ /(?<![\p{L}\p{N}_])\Q$key\E(?![\p{L}\p{N}_])/) { play($args,$key,0); last; }
         }
     }
 }

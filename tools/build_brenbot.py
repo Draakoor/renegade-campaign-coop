@@ -43,9 +43,21 @@ def build(output, archive=None):
         if len(keywords) != 49:
             raise ValueError('Unexpected upstream Funsounds keyword catalog')
         (output / 'funsounds.json').write_text(json.dumps(keywords, indent=2) + '\n')
+        jukebox = bundle.read(root + '/Plugins/jukebox/jukebox.pm').decode()
+        tracks = dict(re.findall(r'"(\d+)"\s*=>\s*"([^"]+\.mp3)"', jukebox))
+        lengths = dict(re.findall(r'"(\d+)"\s*=>\s*"(\d+)"', jukebox))
+        if len(tracks) != 19 or set(tracks) != set(lengths):
+            raise ValueError('Unexpected upstream Jukebox catalog')
+        (output / 'jukebox.json').write_text(json.dumps([
+            dict(id=int(i), file=tracks[i], seconds=int(lengths[i]))
+            for i in sorted(tracks, key=int)], indent=2) + '\n')
+        for filename in ('funsounds-extra.json', 'custom_commands.json'):
+            shutil.copy2(REPO / 'brenbot' / filename, output / filename)
         for name, folder in (
                 ('joinmessages', 'joinmessages/plugins'),
                 ('seen', 'seen'),
+                ('ping', 'ping'),
+                ('fds_status_reporter', 'fds_status_reporter'),
                 ('recommendations', 'recommendations/plugins')):
             prefix = root + '/Plugins/' + folder + '/' + name
             source, xml = configure(name, bundle.read(prefix + '.pm').decode(),

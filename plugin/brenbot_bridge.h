@@ -23,7 +23,9 @@ static std::string Player(cPlayer* p) {
     const int id=p->Get_Id(); if (!sessions.count(id)) sessions[id]=++serial;
     std::ostringstream out;
     out << "\"id\":" << id << ",\"session\":" << sessions[id] << ",\"name\":" << Quote(p->Get_Name())
-        << ",\"team\":" << p->Get_Player_Type();
+        << ",\"team\":" << p->Get_Player_Type() << ",\"ping\":" << Get_Ping(p->Get_Id())
+        << ",\"score\":" << p->Get_Score() << ",\"kills\":" << p->Get_Kills() << ",\"deaths\":" << p->Get_Deaths()
+        << ",\"object\":" << (p->Get_GameObj() ? Commands->Get_ID(p->Get_GameObj()) : 0);
     return out.str();
 }
 static void Snapshot() {
@@ -57,6 +59,18 @@ static void Tick() {
         std::string value; std::getline(in,value); if (!value.empty() && value.front()==' ') value.erase(0,1);
         if (value.find_first_of("\r\n")!=std::string::npos) continue;
         if (operation=="page") DA::Page_Player(p,"%s",value.substr(0,240).c_str());
+        else if (operation=="music" && p->Get_GameObj()) {
+            // Only built-in Jukebox assets; no paths, URLs or console commands.
+            static const char* tracks[]={"ammoclip.mp3","command&conquer.mp3","defunkt.mp3",
+                "in the line of fire.mp3","level0_pt1_music.mp3","level 0 hero.mp3","level 0 nod base.mp3",
+                "level 0 tank.mp3","level 0 tiberium.mp3","mechmansrevenge.mp3","moveit.mp3","onyourfeet.mp3",
+                "raveshaw_act on instinct.mp3","renegadejungle.mp3","sakura battle theme.mp3","sakura_dogfight.mp3",
+                "sneakattack.mp3","sniper.mp3","stopthemagain.mp3"};
+            if (value=="off") Stop_Background_Music_Player(p->Get_GameObj());
+            else for (const auto* track : tracks) if (value==track) {
+                Set_Background_Music_Player(p->Get_GameObj(),track); break;
+            }
+        }
         else if (operation=="sound") {
             bool valid=value.size()>4 && value.size()<128 && value.substr(value.size()-4)==".wav" && value.find("..") == std::string::npos;
             for (unsigned char c : value) valid &= std::isalnum(c) || c=='_' || c=='-' || c=='.';

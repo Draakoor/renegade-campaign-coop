@@ -1,0 +1,14 @@
+{
+  "map": "M01.mix",
+  "human_clients": 0,
+  "diagnostic": "[Novara] DIAGNOSTIC weapons result=PASS count=85; inventory/refill only, no human client test.",
+  "plugin_sha256": "00e11f399eb6c6450aef8b29f53cf9cb760608b0e7c3c4a7865e7c96c85cc89c",
+  "checks": [
+    "85 portable weapon presets granted twice without duplicate copies",
+    "magazine and reserve ammo zeroed, then refilled to capacity",
+    "health, armor and key ring unchanged"
+  ],
+  "limitations": [
+    "Synthetic native FDS test; in-game command targeting and client inventory display need a player test."
+  ]
+}

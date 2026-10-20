@@ -59,6 +59,23 @@ def configure(name, source, xml):
         source = replace(source, "  plugin::play_sound_for_player ( $name, 'bonus_complete.wav' );",
                          '  # No extra unmutable recommendation sound.')
         allowed = {'recommend', 'recommendations', 'teamplayers'}
+    elif name == 'ping':
+        command, own = source.split('sub report_own_ping', 1)
+        command = replace(command,
+                         "plugin::pagePlayer ( $player{'id'}, 'Your ping is currently '.$player{'ping'} );",
+                         "plugin::pagePlayer ( $args{'id'}, 'BRenBot', $message );")
+        own = replace(own,
+                         "plugin::pagePlayer ( $player{'id'}, 'Your ping is currently '.$player{'ping'} );",
+                         "plugin::pagePlayer ( $player{'id'}, 'BRenBot', 'Your ping is currently '.$player{'ping'} );")
+        source = command + 'sub report_own_ping' + own
+        allowed = {'ping'}
+    elif name == 'fds_status_reporter':
+        source = replace(source, 'use Net::FTP;', '# Local output only; FTP is disabled.')
+        source = replace(source, '  uploadFile();', '  # Keep status in the private server volume.')
+        source = replace(source, '$kernel->alarm(updateStatus => int(time()) + 15);',
+                         '$kernel->alarm(updateStatus => int(time()) + 1);')
+        source = replace(source, "$config{'updateInterval'}*60", "$config{'updateInterval'}")
+        allowed = set()
     else:
         raise ValueError('Unknown pinned plugin')
 
@@ -85,4 +102,10 @@ def configure(name, source, xml):
             if event.text not in ('command', 'mapload'):
                 events.remove(event)
         config.remove(config.find('gamelog_regex_hooks'))
+    elif name == 'ping':
+        config.find('./config/cvar').set('value', '0')
+    elif name == 'fds_status_reporter':
+        for cvar in list(config.find('config')):
+            if cvar.get('name') not in ('updateInterval', 'filename'):
+                config.find('config').remove(cvar)
     return source, ET.tostring(config, encoding='utf-8', xml_declaration=True)

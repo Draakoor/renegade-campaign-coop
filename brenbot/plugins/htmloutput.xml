@@ -1,0 +1,2 @@
+<?xml version="1.0"?>
+<plugin name="htmloutput"><events><event>text</event><event>playerjoin</event><event>playerleave</event><event>mapload</event></events><config/></plugin>

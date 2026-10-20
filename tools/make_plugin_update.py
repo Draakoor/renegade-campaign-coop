@@ -27,12 +27,12 @@ def main():
     for name in ('README.md', 'COPYING', 'COPYING.plugin', 'THIRD_PARTY.txt', 'sources.lock.json'):
         files['source/' + name] = root / name
     files['defaults/da.ini'] = root / 'defaults/da.ini'
+    for path in (root / 'brenbot').rglob('*'):
+        if path.is_file():
+            files['source/' + path.relative_to(root).as_posix()] = path
     if args.brenbot_migration:
         for name in ('runtime.py', 'brenbot_runtime.py'):
             files[name] = root / name
-        for path in (root / 'brenbot').rglob('*'):
-            if path.is_file():
-                files['source/' + path.relative_to(root).as_posix()] = path
     config = configparser.ConfigParser()
     config.optionxform = str
     config.read(root / 'defaults/da.ini')

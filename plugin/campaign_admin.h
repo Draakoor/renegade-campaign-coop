@@ -27,6 +27,9 @@ public:
         Register_Chat_Command((DAECC)&NovaraAdmin::Vehicles,"!vehicles",0,DAAccessLevel::ADMINISTRATOR);
         Register_Chat_Command((DAECC)&NovaraAdmin::Spawn,"!spawnvehicle|!vehicle",0,DAAccessLevel::ADMINISTRATOR);
         Register_Chat_Command((DAECC)&NovaraAdmin::Map,"!map|!changemap",0,DAAccessLevel::ADMINISTRATOR);
+        Register_Chat_Command((DAECC)&NovaraAdmin::Weapons,"!weapons",0,DAAccessLevel::ADMINISTRATOR);
+        Register_Chat_Command((DAECC)&NovaraAdmin::GiveWeapon,"!giveweapon",0,DAAccessLevel::ADMINISTRATOR);
+        Register_Chat_Command((DAECC)&NovaraAdmin::GiveAmmo,"!giveammo",0,DAAccessLevel::ADMINISTRATOR);
     }
     void Player_Join_Event(cPlayer* player) override { requests.disconnect(player->Get_Id()); lastSpawn.erase(player->Get_Id()); }
     void Player_Leave_Event(cPlayer* player) override { requests.disconnect(player->Get_Id()); lastSpawn.erase(player->Get_Id()); }
@@ -52,7 +55,58 @@ public:
     }
     bool Help(cPlayer* player,const DATokenClass&,TextMessageEnum) {
         DA::Page_Player(player,"Admin: !givecredits <player/ID|me|all> <amount>, !vehicles [filter] [page], !spawnvehicle <ID|preset>, !map <name>.");
+        DA::Page_Player(player,"Weapons: !weapons [filter] [page], !giveweapon <player/ID|me|all> <ID|preset>, !giveammo <player/ID|me|all>.");
         DA::Page_Player(player,"Also: !nextmap, !restartmap, !kick <player ID>. Reconnect: !admin, then approve in the panel."); return false;
+    }
+    std::vector<cPlayer*> WeaponTargets(cPlayer* actor,const StringClass& name) {
+        std::vector<cPlayer*> targets;
+        const auto who=TextRules::Lower(name.Peek_Buffer());
+        if (who=="all") { for (int i=1;i<=127;++i) if (auto* p=Find_Player(i)) if (p->Is_Active()) targets.push_back(p); }
+        else if (who=="me") targets.push_back(actor);
+        else if (auto* p=Match_Player(actor,name,true,false)) if (p->Is_Active()) targets.push_back(p);
+        return targets;
+    }
+    bool Weapons(cPlayer* player,const DATokenClass& text,TextMessageEnum) {
+        int page=1; std::string filter;
+        if (text.Size()>2) { DA::Page_Player(player,"Use !weapons [filter] [page]."); return false; }
+        if (text.Size() && !TextRules::Number(text[1].Peek_Buffer(),page)) filter=TextRules::Lower(text[1].Peek_Buffer());
+        if (text.Size()==2 && !TextRules::Number(text[2].Peek_Buffer(),page)) { DA::Page_Player(player,"Page must be a positive number."); return false; }
+        std::vector<unsigned> matches;
+        for (unsigned i=0;i<AdminWeapons::catalog.size();++i)
+            if (TextRules::Lower(AdminWeapons::catalog[i]->Get_Name()).find(filter)!=std::string::npos) matches.push_back(i);
+        const int pages=(std::max)(1,(static_cast<int>(matches.size())+5)/6); page=(std::min)(page,pages);
+        DA::Page_Player(player,"Weapons: %u matches, page %d/%d. !giveweapon <player|me|all> <ID|preset>.",static_cast<unsigned>(matches.size()),page,pages);
+        for (unsigned n=(page-1)*6;n<matches.size() && n<static_cast<unsigned>(page*6);++n)
+            DA::Page_Player(player,"%u: %s",matches[n]+1,AdminWeapons::catalog[matches[n]]->Get_Name());
+        return false;
+    }
+    bool GiveWeapon(cPlayer* player,const DATokenClass& text,TextMessageEnum) {
+        if (text.Size()!=2) { DA::Page_Player(player,"Use !giveweapon <player/ID|me|all> <ID|exact preset>. Browse with !weapons."); return false; }
+        const WeaponDefinitionClass* weapon=nullptr; int index=0;
+        if (TextRules::Number(text[2].Peek_Buffer(),index,static_cast<int>(AdminWeapons::catalog.size()))) weapon=AdminWeapons::catalog[index-1];
+        else for (const auto* w : AdminWeapons::catalog) if (!_stricmp(w->Get_Name(),text[2].Peek_Buffer())) weapon=w;
+        if (!weapon) { DA::Page_Player(player,"Unknown portable weapon. Use !weapons [filter] for exact IDs/presets."); return false; }
+        unsigned count=0,skipped=0;
+        for (auto* p : WeaponTargets(player,text[1])) {
+            auto* soldier=p->Get_GameObj();
+            if (!soldier || Commands->Get_Health(soldier)<=0 || !AdminWeapons::Give(soldier,weapon)) { ++skipped; continue; }
+            ++count;
+            DA::Page_Player(p,"Administrator gave you %s with full ammunition.",weapon->Get_Name());
+            Console_Output("[Novara] Admin player=%d gave weapon=%s recipient=%d\n",player->Get_Id(),weapon->Get_Name(),p->Get_Id());
+        }
+        DA::Page_Player(player,"Weapon granted to %u player(s); %u without a living soldier skipped.",count,skipped); return false;
+    }
+    bool GiveAmmo(cPlayer* player,const DATokenClass& text,TextMessageEnum) {
+        if (text.Size()!=1) { DA::Page_Player(player,"Use !giveammo <player/ID|me|all>. Refills carried weapons without healing."); return false; }
+        unsigned count=0,skipped=0;
+        for (auto* p : WeaponTargets(player,text[1])) {
+            auto* soldier=p->Get_GameObj();
+            if (!soldier || Commands->Get_Health(soldier)<=0) { ++skipped; continue; }
+            const unsigned weapons=AdminWeapons::Refill(soldier); ++count;
+            DA::Page_Player(p,"Administrator refilled ammunition for %u carried weapon(s).",weapons);
+            Console_Output("[Novara] Admin player=%d refilled weapons=%u recipient=%d\n",player->Get_Id(),weapons,p->Get_Id());
+        }
+        DA::Page_Player(player,"Ammunition refilled for %u player(s); %u without a living soldier skipped.",count,skipped); return false;
     }
     bool Credits(cPlayer* player,const DATokenClass& text,TextMessageEnum) {
         int amount=0;
@@ -122,7 +176,7 @@ public:
     }
     bool Map(cPlayer* player,const DATokenClass& text,TextMessageEnum) {
         if (text.Size()!=1) {
-            DA::Page_Player(player,"Use !map <name>, e.g. !map tutorial or !map M06. Available rotation:");
+            DA::Page_Player(player,"Use !map <name>, e.g. !map M01 or !map M06. Available rotation:");
             for (int i=0; i<Get_Map_Count(); ++i) DA::Page_Player(player,"%s",Get_Map(i));
             return false;
         }

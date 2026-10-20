@@ -1,0 +1,12 @@
+{
+  "rules": [
+    "Novara Coop: work together, let teammates catch up, and do not block mission objectives or abuse exploits.",
+    "All players fight for the same side. !help lists commands; !admin requires confirmation through the server panel."
+  ],
+  "website": ["Server project and documentation: https://github.com/Draakoor/renegade-campaign-coop"],
+  "web": ["Server project and documentation: https://github.com/Draakoor/renegade-campaign-coop"],
+  "serverinfo": ["Novara | Renegade Coop - 8 players, M01-M11 campaign. Public test: mission playtests are still ongoing."],
+  "afk": ["Taking a break? Move to a safe place. !cp and !goto <player> can help you catch up when you return."],
+  "back": ["Welcome back! Use !cp or !goto <player> to catch up with your team."],
+  "show_commands": ["Information: !rules, !website, !serverinfo, !afk, !back. All gameplay and bot commands: !help."]
+}

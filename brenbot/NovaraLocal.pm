@@ -7,9 +7,12 @@ use POE;
 use JSON::PP qw(decode_json);
 use Fcntl qw(:flock SEEK_SET SEEK_END);
 use File::Path qw(make_path);
+use File::Basename qw(dirname);
+use File::Copy qw(copy);
 our %players;
-our @plugins = qw(funsounds novara_coop joinmessages seen recommendations);
+our @plugins = qw(funsounds novara_coop joinmessages seen recommendations jukebox ping custom_commands htmloutput fds_status_reporter);
 our $map = 'unknown';
+my $maxplayers=8;
 my $server = $ENV{NOVARA_SERVER} or die 'NOVARA_SERVER is required';
 
 sub page {
@@ -23,6 +26,12 @@ sub sound {
     my $p = $players{$id} or return;
     return unless $file =~ /\A[A-Za-z0-9_-][A-Za-z0-9_.-]{0,120}\.wav\z/i && $file !~ /\.\./;
     write_command("sound $p->{session} $id $file");
+}
+sub music {
+    my ($id,$file)=@_;
+    my $p=$players{$id} or return;
+    return unless $file eq 'off' || $file =~ /\A[a-z0-9 &_-]+\.mp3\z/;
+    write_command("music $p->{session} $id $file");
 }
 sub write_command {
     my ($line) = @_;
@@ -40,6 +49,14 @@ sub install {
     *ssgm::start = sub {};
     *renlog::init = sub {};
     *serverStatus::init = sub {};
+    *plugin::getGameStatus = sub {
+        my ($gdi,$nod,$gscore,$nscore)=(0,0,0,0);
+        for my $p (values %players) {
+            if ($p->{team}==1) { ++$gdi; $gscore+=$p->{score}//0; }
+            else { ++$nod; $nscore+=$p->{score}//0; }
+        }
+        return ('Coop',$map,$gdi,$gscore,$nod,$nscore,scalar(keys %players),$maxplayers,'unlimited','unknown');
+    };
     *modules::AutoAnnounce_Init = sub {};
     *brconfig::GetAvailableMaps = sub {};
     *renlog::check_banlist = sub { return 0; };
@@ -74,6 +91,27 @@ sub backup_social_database {
     brdatabase::set_global('novara_social_schema_v1', 1);
     print "[Novara] Social plugin database backup: $dir/brenbot.dat\n";
 }
+sub prepare_catalogs {
+    my $core=dirname(__FILE__);
+    for my $name ('jukebox.json','custom_commands.json') {
+        copy("$core/$name",$name) or die "Could not initialize $name: $!" unless -e $name;
+    }
+    return if -e 'funsounds-extra-v1.applied';
+    open(my $old,'<:raw','funsounds.json') or die "funsounds.json: $!";
+    my $sounds=do { local $/; decode_json(<$old>) }; close($old);
+    open(my $extra,'<:raw',"$core/funsounds-extra.json") or die "Extra sounds: $!";
+    my $more=do { local $/; decode_json(<$extra>) }; close($extra);
+    my $backup="$server/../backups/funsounds-".time()."-$$";
+    make_path($backup);
+    copy('funsounds.json',"$backup/funsounds.json") or die "Funsounds backup: $!";
+    for my $key (keys %$more) { $sounds->{$key}=$more->{$key} unless exists $sounds->{$key}; }
+    open(my $out,'>:raw','funsounds.json.new') or die "Funsounds update: $!";
+    print $out JSON::PP->new->canonical->pretty->utf8->encode($sounds); close($out) or die $!;
+    rename('funsounds.json.new','funsounds.json') or die $!;
+    open(my $marker,'>','funsounds-extra-v1.applied') or die $!;
+    print $marker "120 additional defaults merged; operator entries preserved.\n"; close($marker);
+    print "[Funsounds] Extended catalog merged; backup: $backup/funsounds.json\n";
+}
 sub plugin_event {
     my ($name, $p) = @_;
     my %args = (id=>$p->{id}, nick=>$p->{name}, name=>$p->{name},
@@ -88,6 +126,7 @@ sub leave_player {
     plugin_event('playerleave', $old);
     playerData::clearPlayerData($id);
     funsounds::forget($id) if defined &funsounds::forget;
+    jukebox::forget($id) if defined &jukebox::forget;
 }
 sub update_player {
     my ($p) = @_;
@@ -100,7 +139,10 @@ sub update_player {
         funsounds::forget($p->{id}) if defined &funsounds::forget;
     }
     $players{$p->{id}} = $p;
-    playerData::updatePlayerData($p->{id}, $p->{name}, 0, $p->{team} == 1 ? 'GDI' : 'Nod', 0, '127.0.0.1', 0, '00.00.00');
+    playerData::updatePlayerData($p->{id}, $p->{name}, $p->{score}//0, $p->{team} == 1 ? 'GDI' : 'Nod', $p->{ping}//'unknown', '127.0.0.1', 0, '00.00.00');
+    playerData::setKeyValue($p->{id},'stats_kills',$p->{kills}//0);
+    playerData::setKeyValue($p->{id},'stats_deaths',$p->{deaths}//0);
+    jukebox::sync_player($p,$old) if defined &jukebox::sync_player;
     plugin_event('playerjoin', $p) if $joined;
     return 1;
 }
@@ -132,6 +174,11 @@ sub event {
     }
 }
 sub start {
+    prepare_catalogs();
+    if (open(my $cfg,'<',"$server/data/svrcfg_cnc.ini")) {
+        while (<$cfg>) { $maxplayers=$1 if /^MaxPlayers\s*=\s*(\d+)/i; }
+        close($cfg);
+    }
     for my $name (@plugins) {
         die "BRenBot plugin $name failed" unless plugin::get_state($name)==1 || plugin::load_plugin($name)==1;
     }
