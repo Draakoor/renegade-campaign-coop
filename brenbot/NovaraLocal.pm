@@ -6,7 +6,9 @@ use warnings;
 use POE;
 use JSON::PP qw(decode_json);
 use Fcntl qw(:flock SEEK_SET SEEK_END);
+use File::Path qw(make_path);
 our %players;
+our @plugins = qw(funsounds novara_coop joinmessages seen recommendations);
 our $map = 'unknown';
 my $server = $ENV{NOVARA_SERVER} or die 'NOVARA_SERVER is required';
 
@@ -63,16 +65,43 @@ sub install {
         elsif ($command =~ /^snda ([\w.-]+\.wav)$/i) { sound($_, $1) for keys %players; }
     };
 }
+sub backup_social_database {
+    return if brdatabase::get_global('novara_social_schema_v1');
+    my $dir = "$server/../backups/brenbot-social-".time()."-$$";
+    make_path($dir);
+    $brdatabase::dbh->sqlite_backup_to_file("$dir/brenbot.dat")
+        or die 'Could not back up BRenBot database';
+    brdatabase::set_global('novara_social_schema_v1', 1);
+    print "[Novara] Social plugin database backup: $dir/brenbot.dat\n";
+}
+sub plugin_event {
+    my ($name, $p) = @_;
+    my %args = (id=>$p->{id}, nick=>$p->{name}, name=>$p->{name},
+                teamid=>$p->{team}, session=>$p->{session});
+    for my $plugin (plugin::get_plugin_event($name)) {
+        $main::poe_kernel->post("plugin_$plugin", $name, \%args);
+    }
+}
+sub leave_player {
+    my ($id) = @_;
+    my $old = delete $players{$id} or return;
+    plugin_event('playerleave', $old);
+    playerData::clearPlayerData($id);
+    funsounds::forget($id) if defined &funsounds::forget;
+}
 sub update_player {
     my ($p) = @_;
     return unless ref($p) eq 'HASH' && $p->{id} =~ /^\d+$/ && $p->{id} > 0 && $p->{id} < 128
         && $p->{session} =~ /^\d+$/ && defined($p->{name}) && $p->{team} =~ /^-?\d+$/;
     my $old = $players{$p->{id}};
-    if (!$old || $old->{session} != $p->{session}) {
+    my $joined = !$old || $old->{session} != $p->{session} || $old->{name} ne $p->{name};
+    if ($joined) {
+        leave_player($p->{id}) if $old;
         funsounds::forget($p->{id}) if defined &funsounds::forget;
     }
     $players{$p->{id}} = $p;
     playerData::updatePlayerData($p->{id}, $p->{name}, 0, $p->{team} == 1 ? 'GDI' : 'Nod', 0, '127.0.0.1', 0, '00.00.00');
+    plugin_event('playerjoin', $p) if $joined;
     return 1;
 }
 sub event {
@@ -82,24 +111,28 @@ sub event {
         for my $p (@{$row->{players}}) { $present{$p->{id}}=1 if update_player($p); }
         for my $id (keys %players) {
             next if $present{$id};
-            delete $players{$id}; playerData::clearPlayerData($id);
-            funsounds::forget($id) if defined &funsounds::forget;
+            leave_player($id);
         }
     } elsif ($row->{event} eq 'leave') {
-        delete $players{$row->{id}}; playerData::clearPlayerData($row->{id});
-        funsounds::forget($row->{id}) if defined &funsounds::forget;
+        my $p = $players{$row->{id}};
+        leave_player($row->{id}) if $p && $p->{session} == $row->{session};
     } elsif ($row->{event} eq 'join') {
         update_player($row);
     } elsif ($row->{event} eq 'map') {
         $map = $row->{map}; serverStatus::updateMap($map);
+        for my $plugin (plugin::get_plugin_event('mapload')) {
+            $main::poe_kernel->post("plugin_$plugin", 'mapload', {map=>$map});
+        }
     } elsif ($row->{event} eq 'chat' && ($row->{scope} eq 'public' || $row->{scope} eq 'team')) {
+        return if !defined($row->{message}) || length($row->{message})>300
+            || $row->{message} =~ /[\x00-\x1f\x7f]/;
         return unless update_player($row);
         # The engine supplies identity separately from text; names cannot spoof logs.
         renlog::handle_chat($row->{name}, $row->{message}, $row->{scope} eq 'team');
     }
 }
 sub start {
-    for my $name ('funsounds', 'novara_coop') {
+    for my $name (@plugins) {
         die "BRenBot plugin $name failed" unless plugin::get_state($name)==1 || plugin::load_plugin($name)==1;
     }
     if (open(my $active, '<', "$server/active-map.txt")) {
@@ -125,6 +158,6 @@ sub start {
             $_[KERNEL]->delay('poll', 0.2);
         }
     });
-    print "[Novara] BRenBot ready: funsounds + novara_coop; local files only, IRC disabled.\n";
+    print "[Novara] BRenBot ready: ".join(' + ', @plugins)."; local files only, IRC disabled.\n";
 }
 1;

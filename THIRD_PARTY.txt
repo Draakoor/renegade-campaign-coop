@@ -36,6 +36,12 @@ notices are retained in the image. This repository does not relicense BRenBot.
 The local adapter and replacement plugins are GPL-3.0-or-later. Funsounds uses
 the original 1.02 keyword mapping (original idea credited to zunnie), fetched
 at image build time from Plugins/funsounds. No audio files are redistributed.
+
+Official BRenBot joinmessages 1.0, seen 1.05 and recommendations 1.0 by
+Daniel Paul (danpaul88) are extracted from that same verified archive.
+tools/patch_brenbot_plugins.py applies documented compatibility fixes.
+Their original authorship notices remain in the image; this repository
+does not relicense upstream plugin code.
 Changes: local structured-event/file transport, no IRC/network administration,
 Linux-host OS guard adjusted for Windows FDS under Wine, version-only core
 command registry, unified coop help, word matching, sound scoping/muting and

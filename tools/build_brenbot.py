@@ -9,6 +9,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 import zipfile
 import io
+from patch_brenbot_plugins import configure
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -42,10 +43,21 @@ def build(output, archive=None):
         if len(keywords) != 49:
             raise ValueError('Unexpected upstream Funsounds keyword catalog')
         (output / 'funsounds.json').write_text(json.dumps(keywords, indent=2) + '\n')
+        for name, folder in (
+                ('joinmessages', 'joinmessages/plugins'),
+                ('seen', 'seen'),
+                ('recommendations', 'recommendations/plugins')):
+            prefix = root + '/Plugins/' + folder + '/' + name
+            source, xml = configure(name, bundle.read(prefix + '.pm').decode(),
+                                    bundle.read(prefix + '.xml'))
+            (output / 'plugins').mkdir(exist_ok=True)
+            (output / 'plugins' / (name + '.pm')).write_text(source)
+            (output / 'plugins' / (name + '.xml')).write_bytes(xml)
     main = output / 'brenbot.pl'
     content = main.read_text()
     content = content.replace('brdatabase::db_connect();', 'use NovaraLocal;\nNovaraLocal::install();\nbrdatabase::db_connect();', 1)
     content = content.replace('brIRC::init();', 'NovaraLocal::start();', 1)
+    content = content.replace('plugin::init();', 'NovaraLocal::backup_social_database();\nplugin::init();', 1)
     main.write_text(content)
     commands = output / 'commands.pm'
     commands.write_text(commands.read_text().replace("ForceArray => [ 'group' ]", "ForceArray => [ 'group', 'command' ]", 1))

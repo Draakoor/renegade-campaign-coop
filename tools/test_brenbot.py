@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import sqlite3
 import tempfile
 import threading
 import time
@@ -57,6 +58,16 @@ def test(core):
         def chat(message, index=0, scope='public'):
             send(dict(event='chat', scope=scope, message=message, **players[index]))
 
+        def expect(message, reply, index=0):
+            before = len(output.read_text())
+            chat(message, index)
+            wait(lambda: reply in output.read_text()[before:])
+            return output.read_text()[before:]
+
+        def query(sql, args=()):
+            with sqlite3.connect(work / 'brenbot.dat') as db:
+                return db.execute(sql, args).fetchall()
+
         try:
             wait(lambda: 'BRenBot ready:' in ''.join(log))
             send(dict(event='players', players=players))
@@ -93,13 +104,83 @@ def test(core):
             time.sleep(.4)
             assert 'sound ' not in output.read_text()[before:]
             assert not any(x.startswith(('quit', 'kick', 'gameover', 'campaign_admin')) for x in output.read_text().splitlines())
+            # Run the real upstream social plugins with the coop patches.
+            expect('!setjoin Ready for coop!', 'Your join message has been set.')
+            expect('!viewjoin', 'Ready for coop!')
+            assert query('SELECT message FROM join_messages WHERE name=?', ('draakoor',)) == [('Ready for coop!',)]
+            before = len(output.read_text())
+            send(dict(event='leave', **players[0]))
+            players[0]['session'] = 12
+            send(dict(event='join', **players[0]))
+            send(dict(event='players', players=players))
+            send(dict(event='players', players=players))
+            wait(lambda: output.read_text()[before:].count('[Draakoor] Ready for coop!') == 3)
+            time.sleep(.3)
+            assert output.read_text()[before:].count('[Draakoor] Ready for coop!') == 3
+            # A delayed disconnect from an earlier session cannot remove a new one.
+            send(dict(event='leave', **dict(players[0], session=11)))
+            expect('!seen Draakoor', 'is right with you on this server!', 1)
+            expect('!seen', 'Usage: !seen <playername>')
+            expect('!seen NobodyHere', 'I do not recall seeing NobodyHere')
+            players.append(dict(id=4, session=44, name="O'Brien", team=1))
+            send(dict(event='join', **players[3]))
+            send(dict(event='leave', **players[3]))
+            expect("!seen O'Brien", "o'brien was last seen on this server")
+            assert query('SELECT name FROM seen WHERE name=?', ("o'brien",)) == [("o'brien",)]
+            expect('!seen %', 'I do not recall seeing %')
+            send(dict(event='join', **players[3]))
+            expect('!rec', 'Usage: !recommend')
+            expect('!rec Draakoor teamwork', 'not allowed to recommend yourself')
+            expect("!rec Teammate Great teamwork", 'has been recommended by Draakoor')
+            expect('!rec Teammate Again', 'already recommended Teammate today')
+            expect('!recs', 'You currently have 1 recommendations.', 1)
+            listing = expect('!teamplayers', 'Teamplayers based on recommendations')
+            wait(lambda: 'Teammate (1)' in output.read_text())
+            assert 'None of the players' not in listing
+            expect('!rec 4 Thanks for helping', 'has been recommended by Draakoor')
+            assert query('SELECT recommendations FROM recommendations WHERE name=?', ("O'Brien",)) == [(1,)]
+            expect('!rec 3 Thanks', 'has been recommended by Draakoor')
+            for n in range(5, 8):
+                players.append(dict(id=n, session=n*11, name=f'CoopTest{n}', team=1))
+                send(dict(event='join', **players[-1]))
+            expect('!rec 5 Thanks', 'has been recommended by Draakoor')
+            expect('!rec 6 Thanks', 'has been recommended by Draakoor')
+            expect('!rec 7 Thanks', 'daily limit')
+            before = len(output.read_text())
+            chat('!n00b Teammate test')
+            chat('!recignore Teammate')
+            chat('!setjoin injected\nquit')
+            time.sleep(.4)
+            assert not query('SELECT name FROM recommendations_ignored_users')
+            assert query('SELECT SUM(n00bs) FROM recommendations') == [(0,)]
+            assert query('SELECT message FROM join_messages WHERE name=?', ('draakoor',)) == [('Ready for coop!',)]
+            assert len(list((root / 'backups').glob('brenbot-social-*/brenbot.dat'))) == 1
+            # Bot restart reuses state and never replays old chat/recommendations.
+            stop(proc)
+            thread.join(timeout=2)
+            before = len(output.read_text())
+            prepare(root, core)
+            proc = subprocess.Popen(['perl', str(core / 'brenbot.pl')], cwd=work, env=env,
+                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            old_ready = ''.join(log).count('BRenBot ready:')
+            thread = threading.Thread(target=lambda: log.extend(iter(proc.stdout.readline, '')), daemon=True)
+            thread.start()
+            wait(lambda: ''.join(log).count('BRenBot ready:') > old_ready)
+            send(dict(event='players', players=players))
+            expect('!viewjoin', 'Ready for coop!')
+            expect('!recs', 'You currently have 1 recommendations.', 1)
+            assert 'has been recommended' not in output.read_text()[before:]
+            assert len(list((root / 'backups').glob('brenbot-social-*/brenbot.dat'))) == 1
+            expect('!setjoin off', 'Your join message has been removed.')
+            expect('!viewjoin', 'do not have a join message')
             assert 'TEST: BRenBot attempted' not in ''.join(log)
             assert 'Error' not in ''.join(log), ''.join(log)
+            assert 'failed' not in ''.join(log).lower(), ''.join(log)
             # Re-running setup preserves operator configuration and bot state.
             custom = (work / 'funsounds.json').read_bytes()
             prepare(root, core)
             assert (work / 'funsounds.json').read_bytes() == custom
-            print('PASS: real BRenBot, both plugins, unified help, version, sounds, team scope, mute/reconnect, cooldown, command isolation, no network.')
+            print('PASS: real BRenBot, five plugins, sounds, social commands, join deduplication, seen apostrophes, recommendation quotas, persistence/restart, database backup, command isolation, no network.')
         finally:
             stop(proc)
             thread.join(timeout=2)
