@@ -25,6 +25,9 @@ def configure(name, source, xml):
     set_joinmessage( $args{'nick'}, $setjoin_msg );""")
         allowed = {'setjoin', 'viewjoin'}
     elif name == 'seen':
+        source = replace(source, 'abs(shift - shift)', 'abs(shift() - shift())')
+        source = replace(source, '# Try a wildcard match\n  my @result',
+                         '# Try a literal partial match\n  @result')
         # The upstream code creates plugin_seen but queries seen, and fails to
         # escape apostrophes. Keep the existing seen table if one already exists.
         source = replace(source,
