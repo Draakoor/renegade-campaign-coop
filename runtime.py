@@ -134,7 +134,8 @@ def run_locked():
     bot_restarts = 0
     bot_retry_at = 0
     bridge_ready = False
-    log_tail = b''
+    bridge_file = server / 'brenbot-events.jsonl'
+    bridge_before = bridge_file.stat().st_mtime_ns if bridge_file.exists() else None
 
     def bot_output(process):
         for line in process.stdout:
@@ -193,8 +194,12 @@ def run_locked():
                         offset = incoming.tell()
                     if data:
                         print(data.decode('cp1252', errors='replace'), end='', flush=True)
-                        bridge_ready |= b'[Novara] da_campaign loaded' in log_tail + data
-                        log_tail = (log_tail + data)[-64:]
+                # Early Plugin_Init output is not reliably captured by FDS.
+                # Wait for this process's first structured bridge snapshot;
+                # stale data from a previous run cannot start the bot early.
+                if not bridge_ready and bridge_file.exists():
+                    bridge_stat = bridge_file.stat()
+                    bridge_ready = bridge_stat.st_size > 0 and bridge_stat.st_mtime_ns != bridge_before
                 if bridge_ready and not stopping.is_set():
                     if bot is not None and bot.poll() is not None:
                         print(f'[BRenBot] Exited: {bot.returncode}; retry in 10 seconds.', flush=True)
